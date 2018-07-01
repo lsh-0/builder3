@@ -1,0 +1,20 @@
+defaults:
+    extra-volume:
+        size: 10 # GB
+        dev: /dev/xvdh
+        mnt: /mnt/xvdh
+    vm:
+        os: ubuntu-16.06
+        size: tiny
+        extra-volumes:
+            - 
+                type: extra-volume
+                dev: /dev/xvda
+            -
+                type: extra-volume
+                mnt: /mnt/xvdb
+
+wowman:
+    foo:
+        type: vm
+        os: ubuntu-18.04
