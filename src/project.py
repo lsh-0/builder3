@@ -6,7 +6,9 @@ def gen_path_to_org_file(oname): # returns a path to an extant file
     return join(conf.ORG_DIR, oname + ".yaml")
 
 def read_org_file(oname): # returns a list of raw project descriptions
-    return utils.load_yaml(gen_path_to_org_file(oname))
+    pdata = utils.load_yaml(gen_path_to_org_file(oname))
+    defaults = pdata.pop('defaults')
+    return defaults, pdata
 
 #
 #
@@ -39,9 +41,7 @@ def expand_type(defaults, struct):
     return resource
 
 def main():
-    pdata = read_org_file('home')
-    defaults = pdata.pop('defaults')
-
+    defaults, pdata = read_org_file('home')
     visit_fn = partial(expand_type, defaults)
     new_defaults = visit(defaults, visit_fn)
 
