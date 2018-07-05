@@ -1,6 +1,5 @@
-import conf
 from os.path import join
-from . import utils
+from . import conf, utils
 import copy
 from functools import partial
 from pprint import pprint
