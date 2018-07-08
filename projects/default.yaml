@@ -3,12 +3,36 @@ defaults:
         size: 10 # GB
         dev: /dev/xvdh
         mnt: /mnt/xvdh
+
+    vm-image:
+        id: ubuntu-16.04
+
+    vpc-subnet-1:
+        id: subnet-9e4603fa
+        az: ap-southeast-2a
+
+    vpc-subnet-2:
+        id: subnet-0fc9a679
+        az: ap-southeast-2b
+
+    vpc:
+        id: vpc-67e85103
+        subnet1:
+            type: vpc-subnet-1
+        subnet2:
+            type: vpc-subnet-2
+
     vm:
-        os: ubuntu-16.06
-        size: tiny
+        image: 
+            type: vm-image
+        size: t2.nano
+        region: ap-southeast-2
         extra-volumes: []
+        vpc:
+            type: vpc
 
 p1:
     instance:
         type: vm
-        os: ubuntu-18.04
+        image:
+            id: ubuntu-18.04
