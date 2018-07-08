@@ -36,3 +36,21 @@ basic-multi-resources-w-overrides:
         type: vm
         os: ubuntu-18.04
         size: huge
+
+# with an extra volume
+basic-defaults-extended:
+    resource1:
+        type: vm
+        extra-volumes: # list of dicts
+            -
+                type: extra-volume
+
+# with an extra volume with overridden defaults
+basic-defaults-extended-w-overrides:
+    resource1:
+        type: vm
+        extra-volumes: # list of dicts
+            -
+                type: extra-volume
+                size: 100
+                mnt: /foo/bar

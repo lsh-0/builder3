@@ -29,3 +29,36 @@ def test_basic_project_multi_resources_overrides():
     }
     actual = project.project_data('basic-multi-resources-w-overrides', oname='test-project')
     assert expected == actual
+
+def test_basic_project_extended_defaults():
+    expected = {
+        'resource1': {
+            'os': 'ubuntu-16.04', 'size': 'tiny',
+            'extra-volumes': [
+                {
+                    'size': 10,
+                    'dev': '/dev/xvdh',
+                    'mnt': '/mnt/xvdh'
+                }
+            ]
+        }
+    }
+    actual = project.project_data('basic-defaults-extended', oname='test-project')
+    assert expected == actual
+
+def test_basic_project_extended_defaults_overrides():
+    expected = {
+        'resource1': {
+            'os': 'ubuntu-16.04', 'size': 'tiny',
+            'extra-volumes': [
+                {
+                    'size': 100,
+                    'dev': '/dev/xvdh',
+                    'mnt': '/foo/bar'
+                }
+            ]
+        }
+    }
+    actual = project.project_data('basic-defaults-extended-w-overrides', oname='test-project')
+    assert expected == actual
+
