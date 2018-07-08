@@ -32,7 +32,8 @@ defaults:
             type: vpc
 
 p1:
-    instance:
+    my-little-vm:
         type: vm
+        size: t2.nano
         image:
             id: ubuntu-18.04

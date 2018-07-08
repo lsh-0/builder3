@@ -38,11 +38,6 @@ def visit(val, fn):
 def is_type(struct):
     return isinstance(struct, dict) and 'type' in struct
 
-def rm_type(data):
-    if is_type(data):
-        del data['type']
-    return data
-
 def expand_type(defaults, struct):
     if not is_type(struct):
         return struct
@@ -61,12 +56,10 @@ def all_project_data(oname=None):
     # process defaults, recursively expanding any types and then removing 'type' keys
     visit_fn = partial(expand_type, defaults)
     new_defaults = visit(defaults, visit_fn)
-    new_defaults = visit(new_defaults, rm_type)
 
     # process project data using processed defaults and then remove 'type' keys
     visit_fn = partial(expand_type, new_defaults)
     pdata = OrderedDict([(pname, visit(pdata, visit_fn)) for pname, pdata in odata.items()])
-    pdata = visit(pdata, rm_type) # may be benefits to preserving types
 
     return new_defaults, pdata
 
