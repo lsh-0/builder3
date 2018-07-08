@@ -1,0 +1,8 @@
+#!/bin/bash
+if [ ! -d venv ]; then
+    echo "a virtual env not found, installing ..."
+    . install.sh > /dev/null
+    echo "... done"
+fi
+source venv/bin/activate
+invoke --search-root b3 $@
