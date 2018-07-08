@@ -35,22 +35,39 @@ def visit(val, fn):
         newval = fn(val)
     return newval
 
+def is_type(struct):
+    return isinstance(struct, dict) and 'type' in struct
+
 def expand_type(defaults, struct):
-    if not (isinstance(struct, dict) and 'type' in struct):
+    if not is_type(struct):
         return struct
-    rtype = struct.pop('type')
+    rtype = struct['type']
+    ensure(rtype in defaults, "type %r for %r not found. a type definition must be declared *before* it is used." % (rtype, struct))
     rdefaults = defaults[rtype]
     resource = utils.deepcopy(rdefaults)
     resource.update(struct)
     return resource
 
+def rm_type(data):
+    if is_type(data):
+        del data['type']
+    return data
+
 # cacheable
 def all_project_data(oname=None):
     defaults, odata = read_org_file(oname or conf.DEFAULT_PROJECT_FILE)
+
+    # process defaults, recursively expanding any types and then removing 'type' keys
     visit_fn = partial(expand_type, defaults)
     new_defaults = visit(defaults, visit_fn)
+    new_defaults = visit(new_defaults, rm_type)
+
+    # process project data using processed defaults and then remove 'type' keys
     visit_fn = partial(expand_type, new_defaults)
-    return new_defaults, OrderedDict([(pname, visit(pdata, visit_fn)) for pname, pdata in odata.items()])
+    pdata = OrderedDict([(pname, visit(pdata, visit_fn)) for pname, pdata in odata.items()])
+    pdata = visit(pdata, rm_type) # may be benefits to preserving types
+
+    return new_defaults, pdata
 
 def project_data(pname, oname=None):
     defaults, odata = all_project_data(oname)
