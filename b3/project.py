@@ -21,10 +21,6 @@ def read_org_file(oname): # returns a list of raw project descriptions
     defaults = pdata.pop('defaults')
     return defaults, pdata
 
-#
-#
-#
-
 def visit(val, fn):
     val = fn(val)
     if isinstance(val, dict):
@@ -35,8 +31,17 @@ def visit(val, fn):
         newval = fn(val)
     return newval
 
+#
+#
+#
+
 def is_type(struct):
     return isinstance(struct, dict) and 'type' in struct
+
+def rm_type(data):
+    if is_type(data):
+        del data['type']
+    return data
 
 def expand_type(defaults, struct):
     if not is_type(struct):
@@ -48,13 +53,9 @@ def expand_type(defaults, struct):
     resource.update(struct)
     return resource
 
-def rm_type(data):
-    if is_type(data):
-        del data['type']
-    return data
-
 # cacheable
 def all_project_data(oname=None):
+    "returns a pair of (defaults, all project data)"
     defaults, odata = read_org_file(oname or conf.DEFAULT_PROJECT_FILE)
 
     # process defaults, recursively expanding any types and then removing 'type' keys
