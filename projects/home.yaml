@@ -6,15 +6,9 @@ defaults:
     vm:
         os: ubuntu-16.06
         size: tiny
-        extra-volumes:
-            - 
-                type: extra-volume
-                dev: /dev/xvda
-            -
-                type: extra-volume
-                mnt: /mnt/xvdb
+        extra-volumes: []
 
-wowman:
-    foo:
+p1:
+    instance:
         type: vm
         os: ubuntu-18.04
