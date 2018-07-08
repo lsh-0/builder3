@@ -1,4 +1,31 @@
 from b3 import project
 
-def test_foo():
-    assert 1
+def test_basic_project_defaults():
+    expected = {
+        'resource1': {'os': 'ubuntu-16.04', 'size': 'tiny', 'extra-volumes': []}
+    }
+    actual = project.project_data('basic-defaults', oname='test-project')
+    assert expected == actual
+
+def test_basic_project_overrides():
+    expected = {
+        'resource1': {'os': 'ubuntu-18.04', 'size': 'huge', 'extra-volumes': []}
+    }
+    actual = project.project_data('basic-overrides', oname='test-project')
+    assert expected == actual
+
+def test_basic_project_multi_resources():
+    expected = {
+        'resource1': {'os': 'ubuntu-16.04', 'size': 'tiny', 'extra-volumes': []},
+        'resource2': {'os': 'ubuntu-16.04', 'size': 'tiny', 'extra-volumes': []}
+    }
+    actual = project.project_data('basic-multi-resources', oname='test-project')
+    assert expected == actual
+    
+def test_basic_project_multi_resources_overrides():
+    expected = {
+        'resource1': {'os': 'ubuntu-16.04', 'size': 'tiny', 'extra-volumes': []},
+        'resource2': {'os': 'ubuntu-18.04', 'size': 'huge', 'extra-volumes': []}
+    }
+    actual = project.project_data('basic-multi-resources-w-overrides', oname='test-project')
+    assert expected == actual
