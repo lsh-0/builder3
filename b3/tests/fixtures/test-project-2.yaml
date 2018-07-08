@@ -1,0 +1,36 @@
+defaults:
+    extra-volume:
+        size: 10 # GB
+        dev: /dev/xvdh
+        mnt: /mnt/xvdh
+    vm:
+        os: ubuntu-16.04
+        size: tiny
+        # all vms get these extra volumes by default
+        extra-volumes:
+            - 
+                type: extra-volume
+                dev: /dev/xvda
+            -
+                type: extra-volume
+                mnt: /mnt/xvdb
+            -
+                type: extra-volume
+                size: 100
+                
+                
+extended-defaults:
+    resource1:
+        type: vm
+
+extended-defaults-w-overrides:
+    resource1:
+        type: vm
+        extra-volumes: []
+        
+extended-defaults-w-overrides2:
+    resource1:
+        type: vm
+        extra-volumes:
+            -
+                type: extra-volume
