@@ -40,4 +40,4 @@ def pdata_to_tform(pdata):
     ]
     resources = [fn(pdata) for fn in translations]
     resources = list(filter(None, resources))
-    return {"resources": resources}
+    return {"resource": resources}
