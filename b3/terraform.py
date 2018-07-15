@@ -37,13 +37,15 @@ def mkport(port_data):
             "from_port": port_data,
             "to_port": port_data,
             "protocol": "tcp",
+            "cidr_blocks": ["0.0.0.0/0"], # ipv4 "anywhere"
+            "ipv6_cidr_blocks": ["::/0"], # ipv6 "anywhere"
         }
     raise AssertionError("cannot handle port data of type %s: %s" % (type(port_data), port_data))
 
 def _ec2_security_group(ec2_resource_name, ec2_resource_data, ctx):
     resource_name = ec2_resource_name + "-security-group" # 'my-vm-security-group'
     security_group = {
-        "name_prefix": resource_name,
+        "name": resource_name,
         #"description": "..." # don't do this. changing description will force a new resource.
         "vpc_id": ec2_resource_data['vpc']['id'],
         "ingress": [mkport(port_data) for port_data in ec2_resource_data['ports']],
@@ -64,6 +66,24 @@ def _ec2_keypair(resource_name, resource_data, ctx):
     }
     return resource_name, keypair
 
+def ssh_connection(ctx):
+    return {
+        'type': 'ssh',
+        'user': 'ubuntu', # ami dependent
+        'private_key': '${file("%s")}' % ctx['keypair']()['pem']
+    }
+
+def say_hello_world(ctx):
+    commands = [
+        "echo 'hello, world!'",
+        "whoami",
+        "uname -a",
+    ]
+    return {
+        "inline": commands,
+        "connection": ssh_connection(ctx)
+    }
+
 def ec2_instance(resource_name, resource_data, ctx):
     "returns a single `aws_instance` resource and a single `aws_security_group` resource"
     
@@ -75,10 +95,12 @@ def ec2_instance(resource_name, resource_data, ctx):
     aws_instance = {
         "ami": ctx['ami-map'][image_id][region],
         "instance_type": resource_data['size'],
+        "key_name": keypair_name,
         "tags": [
             {"Name": ctx['iid']}
         ],
-        "security_groups": [security_group_name],
+        "security_groups": ["${aws_security_group.%s.name}" % security_group_name],
+        "provisioner": {"remote-exec": say_hello_world(ctx)},
     }
     return [
         {"aws_key_pair": {keypair_name: keypair}},

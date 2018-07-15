@@ -28,4 +28,10 @@ def create_keypair(iid):
     ensure(rc == 0, "failed to generate keypair for %s: %s" % (pemkey, rc))
     ensure(os.path.exists(pubkey), "pubkey not found: %s" % pubkey)
     ensure(os.path.exists(pemkey), "pemkey not found: %s" % pemkey)
+
+    # correct permissions on pemkey else ssh barfs
+    cmd = "chmod 400 %s" % pemkey
+    rc = os.system(cmd)
+    ensure(rc == 0, "failed to set permissions on pemkey: %s" % pemkey)
+
     return pubkey, pemkey

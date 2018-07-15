@@ -13,7 +13,7 @@ def ami_map():
 def lazy_keypair(iid):
     "called when an ec2 keypair is required by the template. if the template doesn't access the keypair, one won't be generated"
     def wrapped():
-        pub_path, pem_path = keypair.create_keypair(iid)
+        pub_path, pem_path = keypair.create_keypair(iid) # idempotent
         return {
             'pub': open(pub_path, 'r').read(),
             'pem': pem_path,
