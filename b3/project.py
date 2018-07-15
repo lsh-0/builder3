@@ -1,9 +1,8 @@
 from os.path import join
 from . import conf, utils
 from .utils import ensure
-import os, copy
+import os
 from functools import partial
-from pprint import pprint
 from collections import OrderedDict
 
 def gen_path_to_org_file(oname): # returns a path to an extant file
@@ -53,17 +52,33 @@ def all_project_data(oname=None):
     "returns a pair of (defaults, all project data)"
     defaults, odata = read_org_file(oname or conf.DEFAULT_PROJECT_FILE)
 
-    # process defaults, recursively expanding any types and then removing 'type' keys
+    # process defaults, recursively expanding any types
     visit_fn = partial(expand_type, defaults)
     new_defaults = visit(defaults, visit_fn)
 
-    # process project data using processed defaults and then remove 'type' keys
+    # process project data using processed defaults
     visit_fn = partial(expand_type, new_defaults)
-    pdata = OrderedDict([(pname, visit(pdata, visit_fn)) for pname, pdata in odata.items()])
+    odata = OrderedDict([(pname, visit(pdata, visit_fn)) for pname, pdata in odata.items()])
 
-    return new_defaults, pdata
+    return new_defaults, odata
 
 def project_data(pname, oname=None):
     defaults, odata = all_project_data(oname)
     ensure(pname in odata, "project %r not found. available projects: %s" % (pname, ", ".join(odata.keys())))
     return odata[pname]
+
+#
+#
+#
+
+def project_path(iid, fname=None, create_dirs=True):
+    "returns the path to project instance directory"
+    path = join(conf.INSTANCE_DIR, iid)
+    create_dirs and utils.mkdirs(path)
+    return join(path, fname) if fname else path
+
+def write_file(iid, filename, filedata):
+    "writes a file to the project instance directory, returns the path written"
+    path = project_path(iid, filename)
+    open(path, 'w').write(filedata) # insist on bytes?
+    return path

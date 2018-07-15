@@ -106,7 +106,7 @@ def test_project_extended_defaults_overrides():
     actual = project.project_data('extended-defaults-w-overrides', oname='test-project-2')
     assert expected == actual
 
-def test_basic_project_extended_defaults_overrides():
+def test_basic_project_extended_defaults_overrides2():
     expected = {
         'resource1': {
             'type': 'vm', 'os': 'ubuntu-16.04', 'size': 'tiny',
