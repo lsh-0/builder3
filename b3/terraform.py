@@ -57,8 +57,7 @@ def _ec2_security_group(ec2_resource_name, ec2_resource_data, ctx):
 
 def _ec2_keypair(resource_name, resource_data, ctx):
     resource_name = "%s--keypair" % resource_name
-    keypair = ctx['keypair'](resource_data['region']) # downloads a keypair from AWS
-    
+    keypair = ctx['keypair']()
     keypair = {
         "key_name": resource_name,
         "public_key": keypair['pub']

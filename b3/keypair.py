@@ -1,31 +1,31 @@
-from . import aws, project
+from . import project
+from .utils import ensure
 import os
+from os.path import join
 import logging
 
 LOG = logging.getLogger(__name__)
 
 def keypair_path(iid):
-    return project.project_path(iid, iid + "_rsa")
+    path = project.project_path(iid)
+    pem_fname = iid + "_rsa"
+    pub_fname = pem_fname + ".pub"
+    return join(path, pub_fname), join(path, pem_fname)
 
-def create_keypair(iid, region):
-    "creates the ec2 keypair and writes it to s3"
-    expected_key = keypair_path(iid)
-    pub_path = expected_key + ".pub"
-    if os.path.exists(expected_key):
-        LOG.info('keypair, found existing: %s', expected_key)
-        return expected_key, pub_path
-
-    LOG.info('keypair, downloading new')
-    ec2 = aws.boto_conn('ec2', region)
-    keypair = ec2.create_key_pair(KeyName=iid)
-
-    # py3 issue here: https://github.com/boto/boto/issues/3782
-    # key.save(config.KEYPAIR_PATH) # exclude the filename
-    #keypair.material = keypair.material.encode()
-    open(expected_key, 'w').write(keypair.key_material)
-    os.chmod(expected_key, 0o600)
-
-    cmd = "ssh-keygen -y -f %s > %s" % (expected_key, pub_path)
-    os.system(cmd)
-    
-    return expected_key, pub_path
+def create_keypair(iid):
+    """use ssh-keygen to generate a public+private keypair. 
+    pubkey is ultimately uploaded to instance and allows ssh login"""
+    # -t type
+    # -f output filename
+    # -N passphrase (no passphrase '')
+    pubkey, pemkey = keypair_path(iid)
+    if os.path.exists(pemkey):
+        # we can always derive the pubkey again with -y if it's missing
+        return pubkey, pemkey
+    # if pemkey exists, it *will* prompt you.
+    cmd = "ssh-keygen -t rsa -f %s -N ''" % pemkey
+    rc = os.system(cmd)
+    ensure(rc == 0, "failed to generate keypair for %s: %s" % (pemkey, rc))
+    ensure(os.path.exists(pubkey), "pubkey not found: %s" % pubkey)
+    ensure(os.path.exists(pemkey), "pemkey not found: %s" % pemkey)
+    return pubkey, pemkey
