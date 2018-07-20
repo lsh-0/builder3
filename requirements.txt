@@ -1,10 +1,5 @@
 boto3==1.7.58
-invoke==1.0.0
+invoke==1.1.0
 Pygments==2.2.0
 python-terraform==0.10.0
 PyYAML==3.12
-pyflakes==2.0.0
-pylint==1.9.2
-pytest==3.6.3
-ipython==6.4.0
-ipython-genutils==0.2.0
