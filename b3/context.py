@@ -20,8 +20,7 @@ def lazy_keypair(iid):
         }
     return wrapped
 
-def build(pname, uname):
-    iid = "%s--%s" % (pname, uname) # "project1--foobar"
+def build(iid):
     ctx = {
         'iid': iid,
         'ami-map': ami_map(),

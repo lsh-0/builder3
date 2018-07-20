@@ -1,7 +1,7 @@
-import os, sys
-from os.path import join
+import sys
 from invoke import task
-from b3 import project, conf, context, terraform
+from b3 import project, context, terraform
+from b3.utils import ensure
 import json
 from pygments import highlight
 from pygments import lexers
@@ -52,11 +52,18 @@ def pick_iname():
     return 'foo'
 
 @task
-def new(c, pname=None, iname=None):
+def new(c, pname=None, iname=None, overwrite=False):
     pname = pname or pick_project()
     iname = iname or pick_iname()
-    ctx = context.build(pname, iname)
+    iid = project.mkiid(pname, iname)
+    not overwrite and ensure(not project.instance_exists(iid), "instance exists, try 'update'")
+    ctx = context.build(iid)
     template = terraform.pdata_to_tform(project.project_data(pname), ctx)
     cpprint(template)
     path = terraform.write_template(ctx['iid'], template)
     print("wrote", path)
+    return path
+
+@task
+def update(c, pname=None, iname=None):
+    return new(c, pname, iname, overwrite=True)
