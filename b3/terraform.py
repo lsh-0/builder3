@@ -43,7 +43,7 @@ def mkport(port_data):
     raise AssertionError("cannot handle port data of type %s: %s" % (type(port_data), port_data))
 
 def _ec2_security_group(ec2_resource_name, ec2_resource_data, ctx):
-    resource_name = ec2_resource_name + "-security-group" # 'my-vm-security-group'
+    resource_name = ec2_resource_name + "--security-group" # 'my-vm-security-group'
     security_group = {
         "name": resource_name,
         #"description": "..." # don't do this. changing description will force a new resource.

@@ -55,7 +55,7 @@ def pick_iname():
 def new(c, pname=None, iname=None, overwrite=False):
     pname = pname or pick_project()
     iname = iname or pick_iname()
-    iid = project.mkiid(pname, iname)
+    iid = project.mk_iid(pname, iname)
     not overwrite and ensure(not project.instance_exists(iid), "instance exists, try 'update'")
     ctx = context.build(iid)
     template = terraform.pdata_to_tform(project.project_data(pname), ctx)
@@ -65,5 +65,6 @@ def new(c, pname=None, iname=None, overwrite=False):
     return path
 
 @task
-def update(c, pname=None, iname=None):
+def update(c, iid):
+    pname, iname = project.parse_iid(iid)[:2]
     return new(c, pname, iname, overwrite=True)

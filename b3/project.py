@@ -67,10 +67,13 @@ def project_data(pname, oname=None):
     ensure(pname in odata, "project %r not found. available projects: %s" % (pname, ", ".join(odata.keys())))
     return odata[pname]
 
-def mkiid(pname, iname):
+def mk_iid(pname, iname):
     pname, iname = threadm((pname, iname), str, 'lower', 'strip')
     ensure(pname and iname, "both a project name `pname` and instance name `iname` are required to create an instance-id `iid`")
     return "%s--%s" % (pname, iname)
+
+def parse_iid(iid):
+    return iid.split('--')
 
 #
 #
