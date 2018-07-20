@@ -16,6 +16,11 @@ def thread(x, *fns):
             x = fn(x)
     return x
 
+def threadm(x, *fns):
+    if isinstance(x, tuple):
+        return tuple(thread(xn, *fns) for xn in x)
+    return thread(x, *fns)
+
 def flatten(lst):
     return list(itertools.chain(*lst))
 
