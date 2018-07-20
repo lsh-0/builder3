@@ -67,11 +67,14 @@ def project_data(pname, oname=None):
     ensure(pname in odata, "project %r not found. available projects: %s" % (pname, ", ".join(odata.keys())))
     return odata[pname]
 
+def mkiid(pname, iname):
+    return "%s--%s" % (pname, iname)
+
 #
 #
 #
 
-def project_path(iid, fname=None, create_dirs=True):
+def instance_path(iid, fname=None, create_dirs=True):
     "returns the path to project instance directory"
     path = join(conf.INSTANCE_DIR, iid)
     create_dirs and utils.mkdirs(path)
@@ -79,6 +82,9 @@ def project_path(iid, fname=None, create_dirs=True):
 
 def write_file(iid, filename, filedata):
     "writes a file to the project instance directory, returns the path written"
-    path = project_path(iid, filename)
+    path = instance_path(iid, filename)
     open(path, 'w').write(filedata) # insist on bytes?
     return path
+
+def instance_exists(iid):
+    return os.path.exists(instance_path(iid))
