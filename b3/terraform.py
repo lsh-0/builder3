@@ -84,7 +84,7 @@ def say_hello_world(ctx):
         "connection": ssh_connection(ctx)
     }
 
-def ec2_instance(resource_name, resource_data, ctx):
+def ec2_instance(resource_name, resource_data, ctx, node):
     "returns a single `aws_instance` resource and a single `aws_security_group` resource"
     
     security_group_name, security_group = _ec2_security_group(resource_name, resource_data, ctx)
@@ -97,7 +97,7 @@ def ec2_instance(resource_name, resource_data, ctx):
         "instance_type": resource_data['size'],
         "key_name": keypair_name,
         "tags": [
-            {"Name": ctx['iid']}
+            {"Name": "%s--%s" % (ctx['iid'], node)}
         ],
         "security_groups": ["${aws_security_group.%s.name}" % security_group_name],
         "provisioner": {"remote-exec": say_hello_world(ctx)},
@@ -112,7 +112,12 @@ def ec2_instance(resource_name, resource_data, ctx):
 def ec2_resources(pdata, ctx):
     "returns a mixed list of `aws_instance`, `aws_security_group` and `aws_key_pair` resources"
     vms = typefilter(pdata, 'vm')
-    return utils.flatten([ec2_instance(rname, rdata, ctx) for rname, rdata in vms.items()])
+    retval = []
+    for node, rname_rdata in enumerate(vms.items()):
+        node += 1
+        rname, rdata = rname_rdata
+        retval.append(ec2_instance(rname, rdata, ctx, node))
+    return utils.flatten(retval)
 
 def vpc_resources(pdata, ctx):
     return []
