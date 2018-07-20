@@ -1,4 +1,4 @@
-from . import keypair
+from . import keypair, project
 
 def ami_map():
     return {
@@ -21,8 +21,11 @@ def lazy_keypair(iid):
     return wrapped
 
 def build(iid):
+    pname, iname = project.parse_iid(iid)[:2]
     ctx = {
         'iid': iid,
+        'project-name': pname,
+        'instance-name': iname,
         'ami-map': ami_map(),
         'keypair': lazy_keypair(iid),
     }

@@ -97,7 +97,10 @@ def ec2_instance(resource_name, resource_data, ctx, node):
         "instance_type": resource_data['size'],
         "key_name": keypair_name,
         "tags": [
-            {"Name": "%s--%s" % (ctx['iid'], node)}
+            {"Name": "%s--%s" % (ctx['iid'], node)},
+            {"Project": ctx['project-name']},
+            {"Instance Name": ctx['instance-name']},
+            {"Node": node},
         ],
         "security_groups": ["${aws_security_group.%s.name}" % security_group_name],
         "provisioner": {"remote-exec": say_hello_world(ctx)},
