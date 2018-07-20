@@ -4,6 +4,18 @@ import yaml, copy
 class BldrAssertionError(AssertionError):
     pass
 
+def ensure(v, msg, ExceptionClass=BldrAssertionError):
+    if not v:
+        raise ExceptionClass(msg)
+
+def thread(x, *fns):
+    for fn in fns:
+        if isinstance(fn, str):
+            x = getattr(x, fn)() # call method
+        else:
+            x = fn(x)
+    return x
+
 def flatten(lst):
     return list(itertools.chain(*lst))
 
@@ -18,9 +30,6 @@ def dictmap(fn, d):
     "maps given fn to fn(key, val)"
     return [fn(key, val) for key, val in d.items()]
 
-def ensure(v, msg, ExceptionClass=BldrAssertionError):
-    if not v:
-        raise ExceptionClass(msg)
 
 def load_yaml(path):
     with open(path, 'r') as fh:

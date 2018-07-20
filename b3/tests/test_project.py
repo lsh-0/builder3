@@ -1,4 +1,26 @@
 from b3 import project
+from b3.utils import BldrAssertionError
+import pytest
+
+def test_mkiid():
+    cases = [
+        (['foo', 'bar'], 'foo--bar'),
+        ([' foo ', 'bar'], 'foo--bar'),
+        (['foo', ' bar '], 'foo--bar'),
+        ([' foo ', ' bar '], 'foo--bar'),
+    ]
+    for args, expected in cases:
+        assert expected == project.mkiid(*args)
+
+def test_mkiid_bad():
+    cases = [
+        ('foo', ' '),
+        (' ', 'bar'),
+        (' ', ' '),
+    ]
+    for args in cases:
+        with pytest.raises(BldrAssertionError):
+            project.mkiid(*args)
 
 def test_basic_project_defaults():
     expected = {

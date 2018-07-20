@@ -1,6 +1,6 @@
 from os.path import join
 from . import conf, utils
-from .utils import ensure
+from .utils import ensure, thread
 import os
 from functools import partial
 from collections import OrderedDict
@@ -68,6 +68,9 @@ def project_data(pname, oname=None):
     return odata[pname]
 
 def mkiid(pname, iname):
+    pname = thread(pname, str, 'lower', 'strip')
+    iname = thread(iname, str, 'lower', 'strip')
+    ensure(pname and iname, "both a project name `pname` and instance name `iname` are required to create an instance-id `iid`")
     return "%s--%s" % (pname, iname)
 
 #
