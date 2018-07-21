@@ -3,7 +3,6 @@ from . import conf, project
 from .utils import ensure
 from collections import OrderedDict
 import configparser
-
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -28,12 +27,12 @@ def write_inventory(invdict, path=None):
     return path
 
 def instance_groups(iid):
-    pname, iname = project.parse_iid(iid)[:2]
+    pname, iname = project.parse_iid(iid)[:2] # foo--bar
     return [
-        'all',
-        pname, # project 'foo'
-        iname, # instance 'bar' or 'prod' or 'staging'
-        iid, # a group of it's own
+        'all', # simple bucket of 'all' instances
+        pname, # group for instances of project 'foo'
+        iname, # group for instances called 'bar' (or 'prod' or 'staging' or ...)
+        iid,   # a group of it's own
     ]
 
 def add_to_inventory(iid, path=None):
@@ -47,6 +46,8 @@ def add_to_inventory(iid, path=None):
 
     for group_name in group_list:
         grp = inv.get(group_name, OrderedDict())
+
+        # TODO: iid here should be replaced with iid--nodeid
         grp[iid] = "%s:%s" % (public_ip, ssh_port)
         inv[group_name] = grp
 
