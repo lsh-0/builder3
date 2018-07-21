@@ -1,4 +1,5 @@
 from . import keypair, project
+from .utils import ensure
 
 def ami_map():
     return {
@@ -21,6 +22,7 @@ def lazy_keypair(iid):
     return wrapped
 
 def build(iid):
+    "generates a dictionary used in creating terraform templates"
     pname, iname = project.parse_iid(iid)[:2]
     ctx = {
         'iid': iid,
@@ -30,3 +32,13 @@ def build(iid):
         'keypair': lazy_keypair(iid),
     }
     return ctx
+
+def instance_state(iid):
+    "returns a dictionary of values from a terraform statefile."
+    ensure(project.instance_exists(iid), "instance %s must exist with a statefile" % iid)
+    return {
+        'username': 'ubuntu',
+        'ec2': [
+            {'public-ip': '0.0.0.0'}
+        ]
+    }

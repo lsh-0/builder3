@@ -1,6 +1,6 @@
 import sys
 from invoke import task
-from b3 import project, context, terraform
+from b3 import project, context, terraform, keypair
 from b3.utils import ensure
 import json
 from pygments import highlight
@@ -68,3 +68,11 @@ def new(c, pname=None, iname=None, overwrite=False):
 def update(c, iid):
     pname, iname = project.parse_iid(iid)[:2]
     return new(c, pname, iname, overwrite=True)
+
+@task
+def ssh(c, iid, node=1):
+    idata = context.instance_state(iid)
+    public_ip = idata['ec2'][node]['public_ip']
+    username = idata['ec2']['username']
+    _, private_key_path = keypair.keypair_path(iid)
+    c.run('ssh %s@%s -i %s' % (username, public_ip, private_key_path), pty=True)
