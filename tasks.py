@@ -1,4 +1,4 @@
-from invoke import task
+from fabric.api import task, local
 from b3 import project, context, terraform, keypair
 from b3.utils import ensure, cpprint
 from functools import wraps
@@ -7,16 +7,16 @@ from functools import wraps
 # https://github.com/pyinvoke/invoke/issues/555
 def buserr(fn):
     @wraps(fn)
-    def wrapper(c, *args, **kwargs):
+    def wrapper(*args, **kwargs):
         try:
-            return cpprint(fn(c, *args, **kwargs))
+            return cpprint(fn(*args, **kwargs))
         except AssertionError as err:
             print(err)
     return wrapper
 
 @task
 @buserr
-def foobar(c, p1):
+def foobar(p1):
     print(p1)
     raise AssertionError('baz')
 
@@ -25,11 +25,11 @@ def foobar(c, p1):
 #
 
 @task
-def pdata(c, pname):
+def pdata(pname):
     cpprint(project.project_data(pname))
 
 @task
-def defaults(c, oname=None):
+def defaults(oname=None):
     defaults, _ = project.all_project_data(oname)
     cpprint(defaults)
 
@@ -40,7 +40,7 @@ def pick_iname():
     return 'foo'
 
 @task
-def new(c, pname=None, iname=None, overwrite=False):
+def new(pname=None, iname=None, overwrite=False):
     pname = pname or pick_project()
     iname = iname or pick_iname()
     iid = project.mk_iid(pname, iname)
@@ -53,14 +53,14 @@ def new(c, pname=None, iname=None, overwrite=False):
     return path
 
 @task
-def update(c, iid):
+def update(iid):
     pname, iname = project.parse_iid(iid)[:2]
-    return new(c, pname, iname, overwrite=True)
+    return new(pname, iname, overwrite=True)
 
 @task
-def ssh(c, iid, node=1):
+def ssh(iid, node=1):
     idata = context.instance_state(iid)
     public_ip = idata['ec2'][node]['public_ip']
     username = idata['ec2']['username']
     _, private_key_path = keypair.keypair_path(iid)
-    c.run('ssh %s@%s -i %s' % (username, public_ip, private_key_path), pty=True)
+    local('ssh %s@%s -i %s' % (username, public_ip, private_key_path), pty=True)
