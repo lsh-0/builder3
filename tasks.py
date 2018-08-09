@@ -1,19 +1,7 @@
-import sys
 from invoke import task
 from b3 import project, context, terraform, keypair
-from b3.utils import ensure
-import json
-from pygments import highlight
-from pygments import lexers
-from pygments import formatters
+from b3.utils import ensure, cpprint
 from functools import wraps
-
-def cpprint(d):
-    "colourised pretty printer"
-    data = json.dumps(d, indent=4)
-    lexer = lexers.Python3Lexer()
-    formatter = formatters.TerminalFormatter()
-    sys.stdout.write((highlight(data, lexer, formatter)))
 
 # not working with @task atm
 # https://github.com/pyinvoke/invoke/issues/555
@@ -56,7 +44,7 @@ def new(c, pname=None, iname=None, overwrite=False):
     pname = pname or pick_project()
     iname = iname or pick_iname()
     iid = project.mk_iid(pname, iname)
-    not overwrite and ensure(not project.instance_exists(iid), "instance exists, try 'update'")
+    not overwrite and ensure(not project.instance_exists(iid), "instance exists, use 'update'")
     ctx = context.build(iid)
     template = terraform.pdata_to_tform(project.project_data(pname), ctx)
     cpprint(template)

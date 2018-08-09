@@ -1,5 +1,9 @@
-import os, itertools
-import yaml, copy
+import os, sys, itertools
+import json, yaml, copy
+from pygments import highlight
+from pygments import lexers
+from pygments import formatters
+from functools import reduce
 
 class BldrAssertionError(AssertionError):
     pass
@@ -35,10 +39,36 @@ def dictmap(fn, d):
     "maps given fn to fn(key, val)"
     return [fn(key, val) for key, val in d.items()]
 
+def cpprint(d):
+    "colourised pretty printer"
+    data = json.dumps(d, indent=4)
+    lexer = lexers.Python3Lexer()
+    formatter = formatters.TerminalFormatter()
+    sys.stdout.write((highlight(data, lexer, formatter)))
 
 def load_yaml(path):
     with open(path, 'r') as fh:
         return yaml.safe_load(fh)
+
+def _deepmerge(a, b):
+    ta, tb = type(a), type(b)
+    if ta == dict:
+        # merging b into a
+        ensure(tb == dict, "only a dict can be merged with a dict, not: %s" % tb)
+        for key in b:
+            newval = deepmerge(a.get(key), b[key])
+            a[key] = newval
+        return a
+    elif ta == list:
+        if tb == list:
+            a.extend(b) # contents of b simply extend those of a
+        else:
+            a.append(b)
+        return a
+    return b # b replaces a
+
+def deepmerge(*lst):
+    return reduce(_deepmerge, lst)
 
 def deepcopy(d):
     return copy.deepcopy(d)

@@ -1,8 +1,5 @@
+# should follow non-test defaults closely
 defaults:
-    extra-volume:
-        size: 10 # GB
-        dev: /dev/xvdh
-        mnt: /mnt/xvdh
 
     vm-image:
         id: ubuntu-18.04
@@ -22,7 +19,6 @@ defaults:
         subnet2:
             type: vpc-subnet-2
 
-    # TODO rename. we have local vms, remote vms and actual machines
     vm:
         image: 
             type: vm-image
@@ -34,8 +30,6 @@ defaults:
         vpc:
             type: vpc
 
-p1:
-    my-little-vm:
+tform-p1:
+    r1:
         type: vm
-        image:
-            id: ubuntu-16.04

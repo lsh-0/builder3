@@ -1,5 +1,5 @@
 from . import utils, project
-from .utils import ensure
+from .utils import ensure, cpprint
 import json
 from functools import reduce
 
@@ -43,6 +43,7 @@ def mkport(port_data):
     raise AssertionError("cannot handle port data of type %s: %s" % (type(port_data), port_data))
 
 def _ec2_security_group(ec2_resource_name, ec2_resource_data, ctx):
+    ensure('vpc' in ec2_resource_data, "no 'vpc' entry found") # replace with proper schema validation
     resource_name = ec2_resource_name + "--security-group" # 'my-vm-security-group'
     security_group = {
         "name": resource_name,
@@ -105,12 +106,16 @@ def ec2_instance(resource_name, resource_data, ctx, node):
         "security_groups": ["${aws_security_group.%s.name}" % security_group_name],
         "provisioner": {"remote-exec": say_hello_world(ctx)},
     }
-    return [
-        {"aws_key_pair": {keypair_name: keypair}},
-        {'aws_security_group': {security_group_name: security_group}},
-        {'aws_instance': {resource_name: aws_instance}},
-    ]
-
+    return {
+        "resource": [
+            {"aws_key_pair": {keypair_name: keypair}},
+            {'aws_security_group': {security_group_name: security_group}},
+            {'aws_instance': {resource_name: aws_instance}},
+        ],
+        "output": [
+            {"public-ip": {"value": "${aws_instance.%s.public_ip}" % resource_name}}
+        ]
+    }
 
 def ec2_resources(pdata, ctx):
     "returns a mixed list of `aws_instance`, `aws_security_group` and `aws_key_pair` resources"
@@ -120,12 +125,19 @@ def ec2_resources(pdata, ctx):
         node += 1
         rname, rdata = rname_rdata
         retval.append(ec2_instance(rname, rdata, ctx, node))
-    return utils.flatten(retval)
+    return utils.deepmerge(*retval)
 
 def vpc_resources(pdata, ctx):
-    return []
+    return {
+        'resource': [
+            #{'foo': 'bar'}
+        ],
+        'output': [
+            #{'basdef': {"value": 'asdfasdf'}}
+        ]
+    }
 
-def aws_providers(pdata):
+def aws_providers(pdata, ctx):
     provider = {
         "region": "ap-southeast-2",
         "profile": "default",
@@ -133,24 +145,16 @@ def aws_providers(pdata):
         
         "version": "~> 1.27",
     }
-    return {"aws": provider}
+    return {
+        "provider": {"aws": provider}
+    }
 
 def pdata_to_tform(pdata, ctx):
     "translates project data into a structure suitable for terraform"
-
-    providers = [
-        aws_providers
-    ]
-    providers = process(pdata, providers, shrink=True)
-
-    resources = [
+    expansions = [
+        aws_providers,
         ec2_resources,
         vpc_resources,
     ]
-    resources = [fn(pdata, ctx) for fn in resources]
-    resources = utils.flatten(filter(None, resources))
-
-    return {
-        "provider": providers,
-        "resource": resources,
-    }
+    expansions = [fn(pdata, ctx) for fn in expansions]
+    return utils.deepmerge(*expansions)
