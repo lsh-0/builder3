@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 source venv/bin/activate
-pytest -vvv --cov=b3/
+pytest --show-capture=all -s -vvv --cov=b3/
