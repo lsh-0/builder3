@@ -5,4 +5,4 @@ if [ ! -d venv ]; then
     echo "... done"
 fi
 source venv/bin/activate
-fab -f tasks.py $@
+fab $@
