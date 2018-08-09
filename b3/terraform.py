@@ -1,5 +1,5 @@
 from . import utils, project
-from .utils import ensure, cpprint
+from .utils import ensure
 import json
 from functools import reduce
 

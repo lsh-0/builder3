@@ -1,4 +1,4 @@
-from b3 import project, context, terraform, utils
+from b3 import project, context, terraform
 import json
 
 def test_two():
