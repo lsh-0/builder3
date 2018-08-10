@@ -11,7 +11,7 @@ def gen_path_to_org_file(oname): # returns a path to an extant file
         join(conf.TEST_FIXTURE_DIR, oname + '.yaml')
     ]
     path = utils.firstnn(os.path.exists, path_list)
-    ensure(path, "failed to find a project: %s" % ', '.join(path_list))
+    ensure(path, "failed to find org file: %s" % ', '.join(path_list))
     return path
 
 def read_org_file(oname): # returns a list of raw project descriptions
