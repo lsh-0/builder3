@@ -79,6 +79,16 @@ def parse_iid(iid):
 #
 #
 
+def instance_exists(iid):
+    return os.path.exists(instance_path(iid))
+
+def requires_instance(fn):
+    @wraps(fn)
+    def wrapper(iid, *args, **kwargs):
+        ensure(instance_exists(iid), "instance does not exist: %s" % iid)
+        return fn(iid, *args, **kwargs)
+    return wrapper
+
 def instance_path(iid, fname=None, create_dirs=True):
     "returns the path to project instance directory"
     path = join(conf.INSTANCE_DIR, iid)
@@ -91,5 +101,15 @@ def write_file(iid, filename, filedata):
     open(path, 'w').write(filedata) # insist on bytes?
     return path
 
-def instance_exists(iid):
-    return os.path.exists(instance_path(iid))
+@requires_instance
+def instance_data(iid):
+    """returns a map of data that was used to create a project instance. 
+    this instance data can then be used to generate templates or bootstrap """
+    ensure(project.instance_exists(iid), "instance %s must exist with a statefile" % iid)
+    # config + project def => instance_data => terraform/cloudformation/whatever template
+    return {
+        'username': 'ubuntu',
+        'ec2': [
+            {'public-ip': '0.0.0.0'}
+        ]
+    }

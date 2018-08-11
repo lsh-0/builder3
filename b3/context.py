@@ -32,13 +32,3 @@ def build(iid):
         'keypair': lazy_keypair(iid),
     }
     return ctx
-
-def instance_state(iid):
-    "returns a dictionary of values from a terraform statefile."
-    ensure(project.instance_exists(iid), "instance %s must exist with a statefile" % iid)
-    return {
-        'username': 'ubuntu',
-        'ec2': [
-            {'public-ip': '0.0.0.0'}
-        ]
-    }
