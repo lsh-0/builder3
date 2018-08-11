@@ -2,4 +2,4 @@ boto3==1.7.58
 Fabric3==1.14.post1
 Pygments==2.2.0
 python-terraform==0.10.0
-PyYAML==3.12
+PyYAML==3.13
