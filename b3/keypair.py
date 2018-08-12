@@ -13,7 +13,7 @@ def keypair_path(iid):
     return join(path, pub_fname), join(path, pem_fname)
 
 def create_keypair(iid):
-    """use ssh-keygen to generate a public+private keypair. 
+    """use ssh-keygen to generate a public+private keypair.
     pubkey is ultimately uploaded to instance and allows ssh login"""
     # -t type
     # -f output filename

@@ -12,7 +12,7 @@ AMI_MAP = {
 }
 
 def process(pdata, fnlist, shrink=False):
-    """passes the project data through a list of functions, each function returning a map, 
+    """passes the project data through a list of functions, each function returning a map,
     and then shrinks the list of maps into a single map"""
     plist = []
     for fn in fnlist:
@@ -53,7 +53,7 @@ def _ec2_security_group(ec2_resource_name, ec2_resource_data, ctx):
     resource_name = ec2_resource_name + "--security-group" # 'my-vm-security-group'
     security_group = {
         "name": resource_name,
-        #"description": "..." # don't do this. changing description will force a new resource.
+        # "description": "..." # don't do this. changing description will force a new resource.
         "vpc_id": ec2_resource_data['vpc']['id'],
         "ingress": [mkport(port_data) for port_data in ec2_resource_data['ports']],
         # Terraform will remove the default AWS egress rules (ALL) if we don't explicitly supply them
@@ -92,7 +92,7 @@ def say_hello_world(ctx):
 
 def ec2_instance(resource_name, resource_data, ctx, node):
     "returns a single `aws_instance` resource and a single `aws_security_group` resource"
-    
+
     security_group_name, security_group = _ec2_security_group(resource_name, resource_data, ctx)
     keypair_name, keypair = _ec2_keypair(resource_name, resource_data, ctx)
 
@@ -146,8 +146,8 @@ def aws_providers(pdata, ctx):
     provider = {
         "region": "ap-southeast-2",
         "profile": "default",
-        #"shared_credentials_files": "~/.aws/credentials", # default
-        
+        # "shared_credentials_files": "~/.aws/credentials", # default
+
         "version": "~> 1.27",
     }
     return {

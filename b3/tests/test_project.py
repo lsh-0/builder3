@@ -43,7 +43,7 @@ def test_basic_project_multi_resources():
     }
     actual = project.project_data('basic-multi-resources', oname='test-project')
     assert expected == actual
-    
+
 def test_basic_project_multi_resources_overrides():
     expected = {
         'resource1': {'type': 'vm', 'os': 'ubuntu-16.04', 'size': 'tiny', 'extra-volumes': []},

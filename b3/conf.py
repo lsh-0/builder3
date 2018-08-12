@@ -23,7 +23,7 @@ TEST_FIXTURE_DIR = join(TEST_DIR, 'fixtures')
 # ansible
 #
 
-# a simple list of all known instances, grouped in different ways 
+# a simple list of all known instances, grouped in different ways
 INVENTORY_FILE = join(PROJECT_DIR, 'inventory')
 
 
@@ -39,7 +39,7 @@ GLOBAL_VARS = {
 
 PER_INST_VARS = {}
 
-# some resource types need 
+# some resource types need
 PER_TYPE_VARS = {
     'docker': {
         'bootstrap-user': 'docker',

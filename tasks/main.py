@@ -11,7 +11,7 @@ def buserr(fn):
         try:
             return cpprint(fn(*args, **kwargs))
         except BldrAssertionError as err:
-            print('error -',err)
+            print('error -', err)
     return wrapper
 
 #task = task(buserr)
@@ -43,7 +43,7 @@ def new(pname=None, iname=None):
     pname = pname or pick_project()
     iname = iname or pick_iname()
     iid = project.mk_iid(pname, iname)
-    
+
     ensure(not project.instance_exists(iid), "instance exists, use 'update'")
     cpprint(project.new_instance(pname, iname))
     print(project.instance_path(iid))
@@ -61,7 +61,7 @@ def ssh(iid, node=1):
     public_ip = idata['ec2'][node]['public_ip']
     username = idata['ec2']['username']
     _, private_key_path = keypair.keypair_path(iid)
-    local('ssh %s@%s -i %s' % (username, public_ip, private_key_path)) #, pty=True)
+    local('ssh %s@%s -i %s' % (username, public_ip, private_key_path))  # , pty=True)
 
 @task
 @buserr

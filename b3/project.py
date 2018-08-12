@@ -98,13 +98,13 @@ def write_file(iid, filename, filedata):
     open(path, 'w').write(filedata) # insist on bytes?
     return path
 
-#@requires_instance
+# @requires_instance
 def instance_data(iid, oname=None):
-    """returns a map of data that was used to create a project instance. 
+    """returns a map of data that was used to create a project instance.
     this instance data can then be used to generate templates or bootstrap """
     pname = utils.parse_iid(iid)[0]
     pdata = project_data(pname, oname)
-    
+
     # config + project def => instance_data => terraform/cloudformation/whatever template
     ctx = context.build(iid, pdata)
 

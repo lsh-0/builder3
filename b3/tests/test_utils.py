@@ -31,10 +31,10 @@ def test_deepmerge():
 
         ((1, [2]),
          [2]), # b cannot be merged into a, so b replaces a
-        
+
         # deep dicts
         (({'a': {'b': 3, 'c': 5}}, {'a': {'b': 4}}),
-          {'a': {'b': 4, 'c': 5}}),
+         {'a': {'b': 4, 'c': 5}}),
 
         # deep lists
         (([1, [2, [3]]], [4]), [1, [2, [3]], 4]), # extend
@@ -42,10 +42,10 @@ def test_deepmerge():
 
         # mixed deep dicts and lists
         (({'a': {'b': [1], 'c': [2], 'd': 3}}, {'a': {'b': [2], 'c': [2], 'd': 4}}), # merge, append, extend, replace
-          {'a': {'b': [1, 2], 'c': [2, 2], 'd': 4}}),
+         {'a': {'b': [1, 2], 'c': [2, 2], 'd': 4}}),
 
         (({"r": [{"foo": "bar"}], "o": []}, {"r": [{"bar": "baz"}]}),
-          {"r": [{"foo": "bar"}, {"bar": "baz"}], "o": []}),
+         {"r": [{"foo": "bar"}, {"bar": "baz"}], "o": []}),
     ]
     for args, expected in cases:
         assert expected == deepmerge(*args), "failed. expecting: %s" % expected
