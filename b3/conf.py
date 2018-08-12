@@ -6,6 +6,10 @@ PROJECT_DIR = os.path.dirname(SRC_DIR)
 ORG_DIR = join(PROJECT_DIR, "project")
 DEFAULT_PROJECT_FILE = 'default'
 
+BOOTSTRAP_USER = 'root' # actually, ubuntu, depending ...
+DEPLOY_USER = 'luke'
+
+
 #
 # terraform
 #

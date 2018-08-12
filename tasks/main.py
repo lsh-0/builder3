@@ -1,7 +1,5 @@
 from fabric.api import task, local
-import b3
-import b3.bootstrap
-from b3 import project, keypair
+from b3 import project, keypair, bootstrap as b3_bootstrap
 from b3.utils import ensure, cpprint, BldrAssertionError
 from functools import wraps
 
@@ -66,4 +64,4 @@ def ssh(iid, node=1):
 @task
 @buserr
 def bootstrap(iid):
-    b3.bootstrap.bootstrap(iid) # urgh
+    b3_bootstrap.bootstrap(iid)
