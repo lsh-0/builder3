@@ -9,6 +9,7 @@ DEFAULT_PROJECT_FILE = 'default'
 BOOTSTRAP_USER = 'root' # actually, ubuntu, depending ...
 DEPLOY_USER = 'luke'
 
+SCRIPTS_PATH = join(PROJECT_DIR, 'scripts')
 
 #
 # terraform

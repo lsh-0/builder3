@@ -1,6 +1,6 @@
 from . import project, conf
 from .utils import lfilter
-from .remote_utils import ssh_conn, remote
+from .remote_utils import ssh_conn, run_script
 
 STRAPPABLE_BOOTS = [
     'ec2',
@@ -18,7 +18,7 @@ def bootstrap_actual(iid, idata):
 
     if iid == 'work--juniper':
         with ssh_conn('10.1.1.88', conf.BOOTSTRAP_USER, '/home/luke/.ssh/id_rsa'):
-            remote('cat /proc/cpuinfo | grep processor')
+            run_script('bootstrap.sh', conf.DEPLOY_USER)
 
 def bootstrap(iid):
     idata = project.instance_data(iid)
