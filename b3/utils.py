@@ -31,6 +31,12 @@ def flatten(lst):
 def lmap(fn, lst):
     return list(map(fn, lst))
 
+def lfilter(fn, lst):
+    return list(filter(fn, lst))
+
+def first(x):
+    return list(x)[0]
+
 def dictfilterv(fn, d):
     "filters given dict where fn(val) is truthy"
     return {key: val for key, val in d.items() if fn(val)}
@@ -86,3 +92,6 @@ def firstnn(fn, lst):
 
 def mkdirs(path):
     os.system("mkdir -p %s" % path)
+
+def parse_iid(iid):
+    return iid.split('--')

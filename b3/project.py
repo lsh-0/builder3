@@ -1,8 +1,8 @@
 from os.path import join
-from . import conf, utils
+from . import conf, utils, context, terraform
 from .utils import ensure, threadm
-import os
-from functools import partial
+import os, json
+from functools import partial, wraps
 from collections import OrderedDict
 
 def gen_path_to_org_file(oname): # returns a path to an extant file
@@ -72,21 +72,18 @@ def mk_iid(pname, iname):
     ensure(pname and iname, "both a project name `pname` and instance name `iname` are required to create an instance-id `iid`")
     return "%s--%s" % (pname, iname)
 
-def parse_iid(iid):
-    return iid.split('--')
-
 #
 #
 #
 
 def instance_exists(iid):
-    return os.path.exists(instance_path(iid))
+    return os.path.exists(instance_path(iid, create_dirs=False))
 
 def requires_instance(fn):
     @wraps(fn)
-    def wrapper(iid, *args, **kwargs):
+    def wrapper(iid, oname, *args, **kwargs):
         ensure(instance_exists(iid), "instance does not exist: %s" % iid)
-        return fn(iid, *args, **kwargs)
+        return fn(iid, oname, *args, **kwargs)
     return wrapper
 
 def instance_path(iid, fname=None, create_dirs=True):
@@ -101,15 +98,41 @@ def write_file(iid, filename, filedata):
     open(path, 'w').write(filedata) # insist on bytes?
     return path
 
-@requires_instance
-def instance_data(iid):
+#@requires_instance
+def instance_data(iid, oname=None):
     """returns a map of data that was used to create a project instance. 
     this instance data can then be used to generate templates or bootstrap """
-    ensure(project.instance_exists(iid), "instance %s must exist with a statefile" % iid)
     # config + project def => instance_data => terraform/cloudformation/whatever template
+    ctx = context.build(iid)
+    pname = utils.parse_iid(iid)[0]
     return {
-        'username': 'ubuntu',
-        'ec2': [
-            {'public-ip': '0.0.0.0'}
-        ]
+        # project instance configuration
+        'pdata': project_data(pname, oname),
+        # variables
+        'context': ctx,
     }
+
+def new_instance(pname, iname, overwrite=False):
+    "creates a new instance of a project, returning a map of {data-name: (path-to-data, data)}"
+    iid = mk_iid(pname, iname)
+    not overwrite and ensure(not instance_exists(iid), "instance exists: %s" % instance_path(iid, create_dirs=False))
+    struct = {
+        'idata': None,
+        'tform-template': None,
+    }
+    idata = instance_data(iid)
+
+    idata_path = write_file(iid, 'instance-data.json', json.dumps(idata))
+    struct['idata'] = (idata_path, idata)
+
+    # write a terraform template, if possible
+    tform_data = terraform.template(idata)
+    if tform_data:
+        tform_file_path = write_file(iid, iid + ".tf.json", json.dumps(tform_data, indent=4))
+        struct['tform-template'] = (tform_file_path, tform_data)
+
+    return struct
+
+def update_instance(iid):
+    pname, iname = utils.parse_iid(iid)
+    return new_instance(pname, iname, overwrite=True)

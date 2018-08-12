@@ -1,3 +1,4 @@
+#from . import utils
 import os
 from os.path import join
 SRC_DIR = os.path.realpath(os.path.dirname(__file__))
@@ -24,3 +25,39 @@ TEST_FIXTURE_DIR = join(TEST_DIR, 'fixtures')
 
 # a simple list of all known instances, grouped in different ways 
 INVENTORY_FILE = join(PROJECT_DIR, 'inventory')
+
+
+#
+'''
+
+
+# sensible defaults used everywhere
+GLOBAL_VARS = {
+    'bootstrap-user': 'ubuntu', # ec2, droplets
+    'deploy-user': 'luke', # bootstrap will create this user with sudo permissions
+}
+
+PER_INST_VARS = {}
+
+# some resource types need 
+PER_TYPE_VARS = {
+    'docker': {
+        'bootstrap-user': 'docker',
+    }
+    'vagrant': {
+        'bootstrap-user': 'vagrant'
+    },
+    'baremetal': {
+        'bootstrap-user': 'root',
+    }
+}
+
+def cfg(iid=None, resource=None):
+    config = utils.deepcopy(GLOBAL_VARS)
+    if iid:
+        config = merge(config, PER_INST_VARS.get(iid))
+    if resource:
+        ensure('type' in resource, "given resource has no type information!")
+        config = merge(config, PER_TYPE_VARS.get(resource['type']))
+    return config
+'''

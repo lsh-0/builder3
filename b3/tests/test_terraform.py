@@ -1,11 +1,12 @@
-from b3 import project, context, terraform
+from b3 import project, terraform
 import json
 
 def test_two():
     pname = 'tform-p1'
     iid = project.mk_iid(pname, 'test')
-    pdata = project.project_data(pname, oname='test-terraform-project')
-    ctx = context.build(iid)
+    #pdata = project.project_data(pname, oname='test-terraform-project')
+    #ctx = context.build(iid)
+    idata = project.instance_data(iid, oname='test-terraform-project')
     expected = json.loads(r'''{
     "provider": {
         "aws": {
@@ -87,7 +88,7 @@ def test_two():
                             "connection": {
                                 "type": "ssh",
                                 "user": "ubuntu",
-                                "private_key": "${file(\"/media/sdb1/alice/dev/python/builder3/instances/tform-p1--test/tform-p1--test_rsa\")}"
+                                "private_key": "${file(\"tform-p1--test/tform-p1--test_rsa\")}"
                             }
                         }
                     }
@@ -103,6 +104,6 @@ def test_two():
         }
     ]
     }''')
-    actual = terraform.pdata_to_tform(pdata, ctx)
+    actual = terraform.template(idata)
     actual['resource'][0]['aws_key_pair']['r1--keypair']['public_key'] = ""
     assert expected == actual

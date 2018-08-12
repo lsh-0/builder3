@@ -1,6 +1,5 @@
-from . import utils, project
+from . import utils
 from .utils import ensure
-import json
 from functools import reduce
 
 def process(pdata, fnlist, shrink=False):
@@ -25,8 +24,6 @@ def typefilter(pdata, typename):
 #
 #
 
-def write_template(iid, data):
-    return project.write_file(iid, iid + ".tf.json", json.dumps(data, indent=4))
 
 def mkport(port_data):
     if isinstance(port_data, dict):
@@ -60,10 +57,9 @@ def _ec2_security_group(ec2_resource_name, ec2_resource_data, ctx):
 
 def _ec2_keypair(resource_name, resource_data, ctx):
     resource_name = "%s--keypair" % resource_name
-    keypair = ctx['keypair']()
     keypair = {
         "key_name": resource_name,
-        "public_key": keypair['pub']
+        "public_key": ctx['keypair']['pub']
     }
     return resource_name, keypair
 
@@ -71,7 +67,7 @@ def ssh_connection(ctx):
     return {
         'type': 'ssh',
         'user': 'ubuntu', # ami dependent
-        'private_key': '${file("%s")}' % ctx['keypair']()['pem']
+        'private_key': '${file("%s")}' % ctx['keypair']['pem']
     }
 
 def say_hello_world(ctx):
@@ -149,8 +145,9 @@ def aws_providers(pdata, ctx):
         "provider": {"aws": provider}
     }
 
-def pdata_to_tform(pdata, ctx):
+def template(idata):
     "translates project data into a structure suitable for terraform"
+    pdata, ctx = idata['pdata'], idata['context']
     expansions = [
         aws_providers,
         ec2_resources,

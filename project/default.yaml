@@ -1,4 +1,5 @@
 defaults:
+   
     extra-volume:
         size: 10 # GB
         dev: /dev/xvdh
@@ -22,9 +23,8 @@ defaults:
         subnet2:
             type: vpc-subnet-2
 
-    # TODO rename. we have local vms, remote vms and actual machines
     vm:
-        image: 
+        image:
             type: vm-image
         size: t2.nano
         ports:

@@ -1,5 +1,5 @@
 import os
-from . import conf, project
+from . import conf, utils
 from .utils import ensure
 from collections import OrderedDict
 import configparser
@@ -27,7 +27,7 @@ def write_inventory(invdict, path=None):
     return path
 
 def instance_groups(iid):
-    pname, iname = project.parse_iid(iid)[:2] # foo--bar
+    pname, iname = utils.parse_iid(iid)[:2] # foo--bar
     return [
         'all', # simple bucket of 'all' instances
         pname, # group for instances of project 'foo'
