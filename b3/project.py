@@ -102,12 +102,15 @@ def write_file(iid, filename, filedata):
 def instance_data(iid, oname=None):
     """returns a map of data that was used to create a project instance. 
     this instance data can then be used to generate templates or bootstrap """
-    # config + project def => instance_data => terraform/cloudformation/whatever template
-    ctx = context.build(iid)
     pname = utils.parse_iid(iid)[0]
+    pdata = project_data(pname, oname)
+    
+    # config + project def => instance_data => terraform/cloudformation/whatever template
+    ctx = context.build(iid, pdata)
+
     return {
         # project instance configuration
-        'pdata': project_data(pname, oname),
+        'pdata': pdata,
         # variables
         'context': ctx,
     }

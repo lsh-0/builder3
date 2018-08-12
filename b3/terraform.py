@@ -2,6 +2,15 @@ from . import utils
 from .utils import ensure
 from functools import reduce
 
+AMI_MAP = {
+    'ubuntu-16.04': {
+        'ap-southeast-2': 'ami-47c21a25'
+    },
+    'ubuntu-18.04': {
+        'ap-southeast-2': 'ami-23c51c41'
+    }
+}
+
 def process(pdata, fnlist, shrink=False):
     """passes the project data through a list of functions, each function returning a map, 
     and then shrinks the list of maps into a single map"""
@@ -18,7 +27,7 @@ def process(pdata, fnlist, shrink=False):
 
 def typefilter(pdata, typename):
     "give a dict of project data, returns all top-level resources of given `typename`"
-    return utils.dictfilterv(lambda v: v.get('type') == 'vm', pdata)
+    return utils.dictfilterv(lambda v: v.get('type') == typename, pdata)
 
 #
 #
@@ -90,7 +99,7 @@ def ec2_instance(resource_name, resource_data, ctx, node):
     region = resource_data['region']
     image_id = resource_data['image']['id']
     aws_instance = {
-        "ami": ctx['ami-map'][image_id][region],
+        "ami": AMI_MAP[image_id][region],
         "instance_type": resource_data['size'],
         "key_name": keypair_name,
         "tags": [
@@ -115,7 +124,7 @@ def ec2_instance(resource_name, resource_data, ctx, node):
 
 def ec2_resources(pdata, ctx):
     "returns a mixed list of `aws_instance`, `aws_security_group` and `aws_key_pair` resources"
-    vms = typefilter(pdata, 'vm')
+    vms = typefilter(pdata, 'ec2')
     retval = []
     for node, rname_rdata in enumerate(vms.items()):
         node += 1
@@ -145,9 +154,21 @@ def aws_providers(pdata, ctx):
         "provider": {"aws": provider}
     }
 
+TERRAFORMABLE_TYPES = [
+    'ec2', 'vpc'
+]
+
+def terraformable(pdata):
+    for resource_name, resource in pdata.items():
+        if 'type' in resource and resource['type'] in TERRAFORMABLE_TYPES:
+            return True
+    return False
+
 def template(idata):
     "translates project data into a structure suitable for terraform"
     pdata, ctx = idata['pdata'], idata['context']
+    if not terraformable(pdata):
+        return {}
     expansions = [
         aws_providers,
         ec2_resources,

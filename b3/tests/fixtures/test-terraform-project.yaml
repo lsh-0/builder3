@@ -19,7 +19,7 @@ defaults:
         subnet2:
             type: vpc-subnet-2
 
-    vm:
+    ec2:
         image: 
             type: vm-image
         size: t2.nano
@@ -32,4 +32,4 @@ defaults:
 
 tform-p1:
     r1:
-        type: vm
+        type: ec2

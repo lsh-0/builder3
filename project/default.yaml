@@ -23,7 +23,7 @@ defaults:
         subnet2:
             type: vpc-subnet-2
 
-    vm:
+    ec2:
         image:
             type: vm-image
         size: t2.nano
@@ -34,8 +34,14 @@ defaults:
         vpc:
             type: vpc
 
+    actual: {}
+
 p1:
     my-little-vm:
-        type: vm
+        type: ec2
         image:
             id: ubuntu-16.04
+
+work:
+    asdfsa:
+        type: actual
