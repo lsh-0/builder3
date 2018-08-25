@@ -39,8 +39,6 @@ resources.
 Provisioning just means preparing and creating infrastructure so that a project
 can be configured upon it.
 
-Depending on the type of infrastructure, 
-
 ### Terraform
 
 Terraform is used to provision certain project resources. These include:
@@ -66,9 +64,8 @@ After the infrastructure has been provisioned (or not, in some cases), it needs
 to be configured.
 
 Virtual machines often require the *most* configuration, installing many pieces 
-of software with specific configuration. There may also be infrastructure that 
-requires configuring into a certain state that Terraform couldn't accomplish
-during provisioning.
+of software into a specific state. There may also be infrastructure that 
+requires a certain state that Terraform couldn't accomplish during provisioning.
 
 And there may be multiple instances of resources that all require different 
 configuration, like N ec2 instances, or N ec2 instances and an s3 bucket that 
