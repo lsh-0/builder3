@@ -20,11 +20,12 @@ def task(fn):
     return wrapper
 
 def pick_project():
+    print('project')
     _, all_projects = project.read_org_file(conf.DEFAULT_PROJECT_FILE)
     return utils.pick('projects', list(all_projects.keys()))
 
-@task
 def pick_iname():
+    print('instance name')
     return utils.prompt()
 
 def sshable(resource):

@@ -30,7 +30,6 @@ def pick(choice_type, choices, default=0xDEADBEEF):
         return choices[0]
     has_default and ensure(default in choices, "default (%r) isn't in list of choices (%s)" % (default, choices))
 
-    print("%s:" % choice_type)
     for i, x in enumerate(choices):
         print("[%s] %s" % (i, x))
 
@@ -40,5 +39,5 @@ def pick(choice_type, choices, default=0xDEADBEEF):
         ensure(uin in range(0, len(choices)), 'a number between 0 and %s is required' % (len(choices) - 1,))
         return uin
 
-    idx = prompt(validator, choices)
+    idx = prompt(validator)
     return choices[idx]
