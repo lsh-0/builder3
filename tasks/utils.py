@@ -1,5 +1,28 @@
 from b3.utils import ensure
 
+def prompt(fn=None, default=0xDEADBEEF):
+    has_default = default != 0xDEADBEEF
+    while True:
+        prompt = '> '
+        if has_default:
+            prompt = "(%r) > " % default
+
+        uin = input(prompt)
+        if not uin or not uin.strip():
+            if has_default:
+                return default
+            print('input required')
+            continue
+
+        uin = uin.strip()
+        if fn:
+            try:
+                return fn(uin)
+            except AssertionError as err:
+                print(str(err))
+                continue
+        return uin
+
 def pick(choice_type, choices, default=0xDEADBEEF):
     ensure(choices, "no %s to choose from" % choice_type)
     has_default = default != 0xDEADBEEF
@@ -11,26 +34,11 @@ def pick(choice_type, choices, default=0xDEADBEEF):
     for i, x in enumerate(choices):
         print("[%s] %s" % (i, x))
 
-    while True:
-        prompt = '> '
-        if has_default:
-            prompt = "(%s) > " % default
-
-        uin = input(prompt)
-        if not uin:
-            if default != 0xDEADBEEF:
-                return default
-            print('input required')
-            continue
-
-        uin = uin.strip()
-        if not uin.isdigit():
-            print('a number between 0 and %s is required' % (len(choices) - 1,))
-            continue
-
+    def validator(uin):
+        ensure(uin.isdigit(), 'a number between 0 and %s is required' % (len(choices) - 1,))
         uin = int(uin)
-        if not uin in range(0, len(choices)):
-            print('a number between 0 and %s is required' % (len(choices) - 1,))
-            continue
+        ensure(uin in range(0, len(choices)), 'a number between 0 and %s is required' % (len(choices) - 1,))
+        return uin
 
-        return choices[uin]
+    idx = prompt(validator, choices)
+    return choices[idx]

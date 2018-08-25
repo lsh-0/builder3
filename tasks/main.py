@@ -1,29 +1,45 @@
-from fabric.api import task, local
-from b3 import project, keypair, bootstrap as b3_bootstrap
+from fabric.api import task as fabtask, local
+from b3 import project, keypair, bootstrap as b3_bootstrap, conf
 from b3.utils import ensure, cpprint, BldrAssertionError, lfilter
 from functools import wraps
 from . import utils
 
-def buserr(fn):
+def task(fn):
+    @fabtask
     @wraps(fn)
     def wrapper(*args, **kwargs):
         try:
-            return cpprint(fn(*args, **kwargs))
+            resp = fn(*args, **kwargs)
+            return cpprint(resp)
         except BldrAssertionError as err:
             print('error -', err)
             exit(1)
         except KeyboardInterrupt:
-            print('interrupt')
+            print(' keyboard interrupt')
             exit(1)
     return wrapper
 
-task = buserr(task)
-
 def pick_project():
-    return 'p1'
+    _, all_projects = project.read_org_file(conf.DEFAULT_PROJECT_FILE)
+    return utils.pick('projects', list(all_projects.keys()))
 
+@task
 def pick_iname():
-    return 'foo'
+    return utils.prompt()
+
+def sshable(resource):
+    return resource['type'] in [
+        'ec2',
+        'vagrant'
+    ]
+
+def bootstrappable(resource):
+    return resource['type'] in [
+        'ec2',
+        'vagrant',
+        'droplet',
+        'actual',
+    ]
 
 #
 #
@@ -53,12 +69,6 @@ def update(iid):
     cpprint(project.update_instance(iid))
     print(project.instance_path(iid))
 
-def sshable(resource):
-    return resource['type'] in [
-        'ec2',
-        'vagrant'
-    ]
-
 @task
 def ssh(iid, target=0xDEADBEEF):
     idata = project.instance_data(iid)
@@ -67,15 +77,7 @@ def ssh(iid, target=0xDEADBEEF):
     public_ip = target['public_ip']
     username = target['username']
     _, private_key_path = keypair.keypair_path(iid)
-    local('ssh %s@%s -i %s' % (username, public_ip, private_key_path))  # , pty=True)
-
-def bootstrappable(resource):
-    return resource['type'] in [
-        'ec2',
-        'vagrant',
-        'droplet',
-        'actual',
-    ]
+    local('ssh %s@%s -i %s' % (username, public_ip, private_key_path))
     
 @task
 def bootstrap(iid, target=0xDEADBEEF):
