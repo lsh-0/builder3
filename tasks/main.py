@@ -1,7 +1,8 @@
 from fabric.api import task, local
 from b3 import project, keypair, bootstrap as b3_bootstrap
-from b3.utils import ensure, cpprint, BldrAssertionError
+from b3.utils import ensure, cpprint, BldrAssertionError, lfilter
 from functools import wraps
+from . import utils
 
 def buserr(fn):
     @wraps(fn)
@@ -10,9 +11,13 @@ def buserr(fn):
             return cpprint(fn(*args, **kwargs))
         except BldrAssertionError as err:
             print('error -', err)
+            exit(1)
+        except KeyboardInterrupt:
+            print('interrupt')
+            exit(1)
     return wrapper
 
-#task = task(buserr)
+task = buserr(task)
 
 def pick_project():
     return 'p1'
@@ -25,18 +30,15 @@ def pick_iname():
 #
 
 @task
-@buserr
 def pdata(pname):
     cpprint(project.project_data(pname))
 
 @task
-@buserr
 def defaults(oname=None):
     defaults, _ = project.all_project_data(oname)
     cpprint(defaults)
 
 @task
-@buserr
 def new(pname=None, iname=None):
     pname = pname or pick_project()
     iname = iname or pick_iname()
@@ -47,21 +49,37 @@ def new(pname=None, iname=None):
     print(project.instance_path(iid))
 
 @task
-@buserr
 def update(iid):
     cpprint(project.update_instance(iid))
     print(project.instance_path(iid))
 
+def sshable(resource):
+    return resource['type'] in [
+        'ec2',
+        'vagrant'
+    ]
+
 @task
-@buserr
-def ssh(iid, node=1):
+def ssh(iid, target=0xDEADBEEF):
     idata = project.instance_data(iid)
-    public_ip = idata['ec2'][node]['public_ip']
-    username = idata['ec2']['username']
+    targets = lfilter(sshable, idata['pdata-list'])
+    target = utils.pick('project resources', targets, target)
+    public_ip = target['public_ip']
+    username = target['username']
     _, private_key_path = keypair.keypair_path(iid)
     local('ssh %s@%s -i %s' % (username, public_ip, private_key_path))  # , pty=True)
 
+def bootstrappable(resource):
+    return resource['type'] in [
+        'ec2',
+        'vagrant',
+        'droplet',
+        'actual',
+    ]
+    
 @task
-@buserr
-def bootstrap(iid):
-    b3_bootstrap.bootstrap(iid)
+def bootstrap(iid, target=0xDEADBEEF):
+    idata = project.instance_data(iid)
+    targets = lfilter(bootstrappable, idata['pdata-list'])
+    target = utils.pick('project resources', targets, target)
+    b3_bootstrap.bootstrap(iid, idata, target)

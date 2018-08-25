@@ -110,7 +110,8 @@ def instance_data(iid, oname=None):
 
     return {
         # project instance configuration
-        'pdata': pdata,
+        'pdata': pdata, # map of resources
+        'pdata-list': pdata.values(), # list of resources
         # variables
         'context': ctx,
     }
