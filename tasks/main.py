@@ -12,7 +12,7 @@ def task(fn):
             resp = fn(*args, **kwargs)
             return cpprint(resp)
         except BldrAssertionError as err:
-            print('error -', err)
+            print('error:', err)
             exit(1)
         except KeyboardInterrupt:
             print(' keyboard interrupt')
@@ -48,12 +48,19 @@ def bootstrappable(resource):
 
 @task
 def pdata(pname):
-    cpprint(project.project_data(pname))
+    return project.project_data(pname)
 
 @task
-def defaults(oname=None):
+def defaults(oname=None, resource=None):
     defaults, _ = project.all_project_data(oname)
-    cpprint(defaults)
+    if resource:
+        ensure(resource in defaults, "resource %r not found" % resource)
+        return defaults[resource]
+    return defaults
+
+@task
+def instances():
+    return project.instance_list()
 
 @task
 def new(pname=None, iname=None):
@@ -63,12 +70,12 @@ def new(pname=None, iname=None):
 
     ensure(not project.instance_exists(iid), "instance exists, use 'update'")
     cpprint(project.new_instance(pname, iname))
-    print(project.instance_path(iid))
+    return project.instance_path(iid)
 
 @task
 def update(iid):
     cpprint(project.update_instance(iid))
-    print(project.instance_path(iid))
+    return project.instance_path(iid)
 
 @task
 def ssh(iid, target=0xDEADBEEF):

@@ -76,6 +76,15 @@ def mk_iid(pname, iname):
 #
 #
 
+def instance_path(iid, fname=None, create_dirs=True):
+    "returns the path to project instance directory"
+    path = join(conf.INSTANCE_DIR, iid)
+    create_dirs and utils.mkdirs(path)
+    return join(path, fname) if fname else path
+
+def instance_list():
+    return os.listdir(conf.INSTANCE_DIR)
+
 def instance_exists(iid):
     return os.path.exists(instance_path(iid, create_dirs=False))
 
@@ -85,12 +94,6 @@ def requires_instance(fn):
         ensure(instance_exists(iid), "instance does not exist: %s" % iid)
         return fn(iid, oname, *args, **kwargs)
     return wrapper
-
-def instance_path(iid, fname=None, create_dirs=True):
-    "returns the path to project instance directory"
-    path = join(conf.INSTANCE_DIR, iid)
-    create_dirs and utils.mkdirs(path)
-    return join(path, fname) if fname else path
 
 def write_file(iid, filename, filedata):
     "writes a file to the project instance directory, returns the path written"
