@@ -1,6 +1,6 @@
 from os.path import join
 from . import conf, utils, context, terraform
-from .utils import ensure, threadm
+from .utils import ensure, threadm, lfilter
 import os, json
 from functools import partial, wraps
 from collections import OrderedDict
@@ -76,17 +76,23 @@ def mk_iid(pname, iname):
 #
 #
 
-def instance_path(iid, fname=None, create_dirs=True):
+def instance_path(iid, fname=None, create_dirs=False):
     "returns the path to project instance directory"
     path = join(conf.INSTANCE_DIR, iid)
     create_dirs and utils.mkdirs(path)
     return join(path, fname) if fname else path
 
 def instance_list():
-    return os.listdir(conf.INSTANCE_DIR) if os.path.exists(conf.INSTANCE_DIR) else []
+    if not os.path.exists(conf.INSTANCE_DIR):
+        return []
+    def fn(fname):
+        "an instance directory looks like 'pname--iname'"
+        if '--' in fname:
+            return os.path.isdir(join(conf.INSTANCE_DIR, fname))
+    return lfilter(fn, os.listdir(conf.INSTANCE_DIR))
 
 def instance_exists(iid):
-    return os.path.exists(instance_path(iid, create_dirs=False))
+    return os.path.exists(instance_path(iid))
 
 def requires_instance(fn):
     @wraps(fn)
@@ -97,7 +103,7 @@ def requires_instance(fn):
 
 def write_file(iid, filename, filedata):
     "writes a file to the project instance directory, returns the path written"
-    path = instance_path(iid, filename)
+    path = instance_path(iid, filename, create_dirs=True)
     open(path, 'w').write(filedata) # insist on bytes?
     return path
 
@@ -122,7 +128,7 @@ def instance_data(iid, oname=None):
 def new_instance(pname, iname, overwrite=False):
     "creates a new instance of a project, returning a map of {data-name: (path-to-data, data)}"
     iid = mk_iid(pname, iname)
-    not overwrite and ensure(not instance_exists(iid), "instance exists: %s" % instance_path(iid, create_dirs=False))
+    not overwrite and ensure(not instance_exists(iid), "instance exists: %s" % instance_path(iid))
     struct = {
         'idata': None,
         'tform-template': None,

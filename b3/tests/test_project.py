@@ -1,6 +1,7 @@
-from b3 import project
+from b3 import conf, project
 from b3.utils import BldrAssertionError
 import pytest
+from unittest.mock import patch
 
 def test_mk_iid():
     cases = [
@@ -144,3 +145,13 @@ def test_basic_project_extended_defaults_overrides2():
     }
     actual = project.project_data('extended-defaults-w-overrides2', oname='test-project-2')
     assert expected == actual
+
+def test_instance_list_when_instance_dir_dne():
+    "don't die when the instance dir doesn't exist"
+    with patch('b3.conf.INSTANCE_DIR', '/foo/bar'):
+        assert project.instance_list() == []
+
+def test_instance_list_when_instance_dir_noisy():
+    "instance directories look a certain way, ensure anything that doesn't look like one is filtered out"
+    with patch('b3.conf.INSTANCE_DIR', conf.PROJECT_DIR):
+        assert project.instance_list() == []

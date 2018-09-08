@@ -7,7 +7,7 @@ import logging
 LOG = logging.getLogger(__name__)
 
 def keypair_path(iid):
-    path = project.instance_path(iid)
+    path = project.instance_path(iid, create_dirs=True)
     pem_fname = iid + "_rsa"
     pub_fname = pem_fname + ".pub"
     return join(path, pub_fname), join(path, pem_fname)
