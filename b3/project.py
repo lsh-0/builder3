@@ -83,7 +83,7 @@ def instance_path(iid, fname=None, create_dirs=True):
     return join(path, fname) if fname else path
 
 def instance_list():
-    return os.listdir(conf.INSTANCE_DIR)
+    return os.listdir(conf.INSTANCE_DIR) if os.path.exists(conf.INSTANCE_DIR) else []
 
 def instance_exists(iid):
     return os.path.exists(instance_path(iid, create_dirs=False))
