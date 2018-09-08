@@ -52,11 +52,23 @@ def requires_instance(fn):
         return fn(iid, *args, **kwargs)
     return _wrapper
 
+def requires_project(fn):
+    @wraps(fn)
+    def _wrapper(pname=None, *args, **kwargs):
+        _, known_projects = project.all_project_data()
+        known_projects = known_projects.keys()
+        if not pname:
+            pname = utils.pick('project', known_projects)
+        ensure(pname in known_projects, "not a known project")
+        return fn(pname, *args, **kwargs)
+    return _wrapper
+
 #
 #
 #
 
 @task
+@requires_project
 def pdata(pname):
     "list project data"
     return project.project_data(pname)
