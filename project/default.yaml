@@ -36,7 +36,7 @@ defaults:
 
     actual: {}
 
-p1:
+simple-ec2:
     my-little-vm:
         type: ec2
         image:
