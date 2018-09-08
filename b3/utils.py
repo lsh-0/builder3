@@ -1,3 +1,4 @@
+from datetime import datetime
 import os, sys, itertools
 import json, yaml, copy
 from pygments import highlight
@@ -45,9 +46,16 @@ def dictmap(fn, d):
     "maps given fn to fn(key, val)"
     return [fn(key, val) for key, val in d.items()]
 
+def json_unsafe_dumps(d, *args, **kwargs):
+    def fn(x):
+        if isinstance(x, datetime):
+            return x.isoformat()
+        return '[unserialisable object %r]' % x
+    return json.dumps(d, *args, default=fn, **kwargs)
+
 def cpprint(d):
-    "colourised pretty printer"
-    data = json.dumps(d, indent=4)
+    "colourised pretty printer. not safe for proper data serialisation"
+    data = json_unsafe_dumps(d, indent=4)
     lexer = lexers.Python3Lexer()
     formatter = formatters.TerminalFormatter()
     sys.stdout.write((highlight(data, lexer, formatter)))

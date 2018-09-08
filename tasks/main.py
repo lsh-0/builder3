@@ -42,16 +42,28 @@ def bootstrappable(resource):
         'actual',
     ]
 
+def requires_instance(fn):
+    @wraps(fn)
+    def _wrapper(iid=None, *args, **kwargs):
+        known_instances = project.instance_list()
+        if not iid:
+            iid = utils.pick('instance', known_instances)
+        ensure(iid in known_instances, "that is not a known instance")
+        return fn(iid, *args, **kwargs)
+    return _wrapper
+
 #
 #
 #
 
 @task
 def pdata(pname):
+    "list project data"
     return project.project_data(pname)
 
 @task
 def defaults(oname=None, resource=None):
+    "list default project data"
     defaults, _ = project.all_project_data(oname)
     if resource:
         ensure(resource in defaults, "resource %r not found" % resource)
@@ -60,10 +72,18 @@ def defaults(oname=None, resource=None):
 
 @task
 def instances():
+    "list known instances"
     return project.instance_list()
 
 @task
+@requires_instance
+def context(iid):
+    "list project instance state"
+    return project.instance_data(iid)
+
+@task
 def new(pname=None, iname=None):
+    "create new project instance"
     pname = pname or pick_project()
     iname = iname or pick_iname()
     iid = project.mk_iid(pname, iname)
@@ -73,12 +93,16 @@ def new(pname=None, iname=None):
     return project.instance_path(iid)
 
 @task
+@requires_instance
 def update(iid):
+    "update project instance"
     cpprint(project.update_instance(iid))
     return project.instance_path(iid)
 
 @task
+@requires_instance
 def ssh(iid, target=0xDEADBEEF):
+    "ssh into project instance"
     idata = project.instance_data(iid)
     targets = lfilter(sshable, idata['pdata-list'])
     target = utils.pick('project resources', targets, target)
@@ -86,9 +110,11 @@ def ssh(iid, target=0xDEADBEEF):
     username = target['username']
     _, private_key_path = keypair.keypair_path(iid)
     local('ssh %s@%s -i %s' % (username, public_ip, private_key_path))
-    
+
 @task
+@requires_instance
 def bootstrap(iid, target=0xDEADBEEF):
+    "bootstrap project instance"
     idata = project.instance_data(iid)
     targets = lfilter(bootstrappable, idata['pdata-list'])
     target = utils.pick('project resources', targets, target)
