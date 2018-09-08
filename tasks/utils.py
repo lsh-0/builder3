@@ -24,7 +24,7 @@ def prompt(fn=None, default=0xDEADBEEF):
         return uin
 
 def pick(choice_type, choices, default=0xDEADBEEF):
-    ensure(choices, "no %s to choose from" % choice_type)
+    ensure(choices, "no %ss to choose from" % choice_type)
     has_default = default != 0xDEADBEEF
     if len(choices) == 1:
         return choices[0]
