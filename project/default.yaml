@@ -37,11 +37,11 @@ defaults:
     actual: {}
 
 simple-ec2:
-    my-little-vm:
+    -   
         type: ec2
         image:
             id: ubuntu-16.04
 
 work:
-    asdfsa:
+    - 
         type: actual

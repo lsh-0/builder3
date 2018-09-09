@@ -31,5 +31,5 @@ defaults:
             type: vpc
 
 tform-p1:
-    r1:
+    -
         type: ec2

@@ -26,13 +26,12 @@ def process(pdata, fnlist, shrink=False):
     return plist
 
 def typefilter(pdata, typename):
-    "give a dict of project data, returns all top-level resources of given `typename`"
-    return utils.dictfilterv(lambda v: v.get('type') == typename, pdata)
+    "give a list of resources, returns all top-level resources of given `typename`"
+    return utils.lfilter(lambda v: v.get('type') == typename, pdata)
 
 #
 #
 #
-
 
 def mkport(port_data):
     if isinstance(port_data, dict):
@@ -50,7 +49,7 @@ def mkport(port_data):
 
 def _ec2_security_group(ec2_resource_name, ec2_resource_data, ctx):
     ensure('vpc' in ec2_resource_data, "no 'vpc' entry found") # replace with proper schema validation
-    resource_name = ec2_resource_name + "--security-group" # 'my-vm-security-group'
+    resource_name = ec2_resource_name + "--security-group" # "pname--iname--node1--security-group"
     security_group = {
         "name": resource_name,
         # "description": "..." # don't do this. changing description will force a new resource.
@@ -64,8 +63,8 @@ def _ec2_security_group(ec2_resource_name, ec2_resource_data, ctx):
     }
     return resource_name, security_group
 
-def _ec2_keypair(resource_name, resource_data, ctx):
-    resource_name = "%s--keypair" % resource_name
+def _ec2_keypair(ec2_resource_name, _, ctx):
+    resource_name = "%s--keypair" % ec2_resource_name # "pname--iname--node1--keypair"
     keypair = {
         "key_name": resource_name,
         "public_key": ctx['ec2']['keypair']['pub']
@@ -90,8 +89,10 @@ def say_hello_world(ctx):
         "connection": ssh_connection(ctx)
     }
 
-def ec2_instance(resource_name, resource_data, ctx, node):
+def ec2_instance(resource_data, ctx, node):
     "returns a single `aws_instance` resource and a single `aws_security_group` resource"
+
+    resource_name = "%s--node%s" % (ctx['iid'], node) # "pname--iname--node1"
 
     security_group_name, security_group = _ec2_security_group(resource_name, resource_data, ctx)
     keypair_name, keypair = _ec2_keypair(resource_name, resource_data, ctx)
@@ -103,10 +104,10 @@ def ec2_instance(resource_name, resource_data, ctx, node):
         "instance_type": resource_data['size'],
         "key_name": keypair_name,
         "tags": [
-            {"Name": "%s--%s" % (ctx['iid'], node)},
-            {"Project": ctx['project-name']},
-            {"Instance Name": ctx['instance-name']},
-            {"Node": node},
+            {"Name": resource_name},
+            {"Project": ctx['project-name']}, # "pname"
+            {"Instance Name": ctx['instance-name']}, # "iname"
+            {"Node": node}, "1"
         ],
         "security_groups": ["${aws_security_group.%s.name}" % security_group_name],
         "provisioner": {"remote-exec": say_hello_world(ctx)},
@@ -125,12 +126,10 @@ def ec2_instance(resource_name, resource_data, ctx, node):
 def ec2_resources(pdata, ctx):
     "returns a mixed list of `aws_instance`, `aws_security_group` and `aws_key_pair` resources"
     vms = typefilter(pdata, 'ec2')
-    retval = []
-    for node, rname_rdata in enumerate(vms.items()):
-        node += 1
-        rname, rdata = rname_rdata
-        retval.append(ec2_instance(rname, rdata, ctx, node))
-    return utils.deepmerge(*retval)
+    results = []
+    for node, resource in enumerate(vms):
+        results.append(ec2_instance(resource, ctx, node))
+    return utils.deepmerge(*results)
 
 def vpc_resources(pdata, ctx):
     return {
@@ -159,13 +158,15 @@ TERRAFORMABLE_TYPES = [
 ]
 
 def terraformable(pdata):
-    for resource_name, resource in pdata.items():
+    "returns True if project data contains resources handled by Terraform"
+    for resource in pdata:
         if 'type' in resource and resource['type'] in TERRAFORMABLE_TYPES:
             return True
     return False
 
-def template(idata):
+def template(instance_data):
     "translates project data into a structure suitable for terraform"
+    idata = instance_data
     pdata, ctx = idata['pdata'], idata['context']
     if not terraformable(pdata):
         return {}

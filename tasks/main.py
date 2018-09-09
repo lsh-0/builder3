@@ -91,7 +91,7 @@ def instances():
 @requires_instance
 def context(iid):
     "list project instance state"
-    return project.instance_data(iid)
+    return project.new_instance_data(iid)
 
 @task
 def new(pname=None, iname=None):

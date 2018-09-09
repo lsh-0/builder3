@@ -31,8 +31,8 @@ def build(iid, pdata):
     per_type_context = OrderedDict([
         ('ec2', [vm_context, ec2_context]),
     ])
-    for resource_name, resource_data in pdata.items():
-        rtype = resource_data['type']
+    for resource in pdata:
+        rtype = resource['type']
         build_context_fn_lst = per_type_context[rtype] if rtype in per_type_context else []
         if not isinstance(build_context_fn_lst, list):
             build_context_fn_lst = [build_context_fn_lst]

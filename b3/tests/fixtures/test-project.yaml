@@ -10,12 +10,12 @@ defaults:
 
 # a project that uses just defaults
 basic-defaults:
-    resource1:
+    -
         type: vm
 
 # with overrides
 basic-overrides:
-    resource1:
+    -
         type: vm
         os: ubuntu-18.04
         size: huge
@@ -23,23 +23,23 @@ basic-overrides:
 
 # with multiple resources
 basic-multi-resources:
-    resource1:
+    -
         type: vm
-    resource2:
+    -
         type: vm
 
 # with multiple resources, some with overrides
 basic-multi-resources-w-overrides:
-    resource1:
+    -
         type: vm
-    resource2:
+    -
         type: vm
         os: ubuntu-18.04
         size: huge
 
 # with an extra volume
 basic-defaults-extended:
-    resource1:
+    -
         type: vm
         extra-volumes: # list of dicts
             -
@@ -47,7 +47,7 @@ basic-defaults-extended:
 
 # with an extra volume with overridden defaults
 basic-defaults-extended-w-overrides:
-    resource1:
+    -
         type: vm
         extra-volumes: # list of dicts
             -

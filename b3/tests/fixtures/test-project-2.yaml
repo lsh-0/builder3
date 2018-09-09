@@ -20,16 +20,16 @@ defaults:
                 
                 
 extended-defaults:
-    resource1:
+    -
         type: vm
 
 extended-defaults-w-overrides:
-    resource1:
+    -
         type: vm
         extra-volumes: []
         
 extended-defaults-w-overrides2:
-    resource1:
+    -
         type: vm
         extra-volumes:
             -
