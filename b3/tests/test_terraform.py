@@ -4,9 +4,7 @@ import json
 def test_two():
     pname = 'tform-p1'
     iid = project.mk_iid(pname, 'test')
-    #pdata = project.project_data(pname, oname='test-terraform-project')
-    #ctx = context.build(iid)
-    idata = project.instance_data(iid, oname='test-terraform-project')
+    idata = project.new_instance_data(iid, oname='test-terraform-project')
     expected = json.loads(r'''{
     "provider": {
         "aws": {

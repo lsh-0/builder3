@@ -68,7 +68,7 @@ def _ec2_keypair(resource_name, resource_data, ctx):
     resource_name = "%s--keypair" % resource_name
     keypair = {
         "key_name": resource_name,
-        "public_key": ctx['keypair']['pub']
+        "public_key": ctx['ec2']['keypair']['pub']
     }
     return resource_name, keypair
 
@@ -76,7 +76,7 @@ def ssh_connection(ctx):
     return {
         'type': 'ssh',
         'user': 'ubuntu', # ami dependent
-        'private_key': '${file("%s")}' % ctx['keypair']['pem']
+        'private_key': '${file("%s")}' % ctx['ec2']['keypair']['pem']
     }
 
 def say_hello_world(ctx):

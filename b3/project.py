@@ -107,10 +107,9 @@ def write_file(iid, filename, filedata):
     open(path, 'w').write(filedata) # insist on bytes?
     return path
 
-# @requires_instance
-def instance_data(iid, oname=None):
-    """returns a map of data that was used to create a project instance.
-    this instance data can then be used to generate templates or bootstrap """
+def new_instance_data(iid, oname=None):
+    """returns a map of data about a project instance. 
+    this data could be used to compare with existing and generate updates"""
     pname = utils.parse_iid(iid)[0]
     pdata = project_data(pname, oname)
 
@@ -118,12 +117,15 @@ def instance_data(iid, oname=None):
     ctx = context.build(iid, pdata)
 
     return {
-        # project instance configuration
-        'pdata': pdata, # map of resources
-        'pdata-list': list(pdata.values()), # list of resources
-        # variables
+        'pdata': pdata,
         'context': ctx,
     }
+
+# @requires_instance
+def instance_data(iid, oname=None):
+    """returns a map of data about the project instance, including the
+    context used to build the terraform project and the project data."""
+    return json.load(open(instance_path(iid, 'instance-data.json')))
 
 def new_instance(pname, iname, overwrite=False):
     "creates a new instance of a project, returning a map of {data-name: (path-to-data, data)}"
@@ -133,7 +135,7 @@ def new_instance(pname, iname, overwrite=False):
         'idata': None,
         'tform-template': None,
     }
-    idata = instance_data(iid)
+    idata = new_instance_data(iid)
 
     idata_path = write_file(iid, 'instance-data.json', json.dumps(idata))
     struct['idata'] = (idata_path, idata)
