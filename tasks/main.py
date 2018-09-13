@@ -83,7 +83,7 @@ def defaults(oname=None, resource=None):
     return defaults
 
 @task
-def instances():
+def list():
     "list known instances"
     return project.instance_list()
 

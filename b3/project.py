@@ -62,6 +62,10 @@ def all_project_data(oname=None):
 
     return new_defaults, odata
 
+def project_list(oname=None):
+    defaults, odata = all_project_data(oname)
+    return list(odata.keys())
+
 def project_data(pname, oname=None):
     defaults, odata = all_project_data(oname)
     ensure(pname in odata, "project %r not found. available projects: %s" % (pname, ", ".join(odata.keys())))
@@ -85,9 +89,11 @@ def instance_path(iid, fname=None, create_dirs=False):
 def instance_list():
     if not os.path.exists(conf.INSTANCE_DIR):
         return []
+    known_projects = project_list()
     def fn(fname):
         "an instance directory looks like 'pname--iname'"
-        if '--' in fname:
+        bits = fname.split('--')
+        if len(bits) > 1 and bits[0] in known_projects:
             return os.path.isdir(join(conf.INSTANCE_DIR, fname))
     return lfilter(fn, os.listdir(conf.INSTANCE_DIR))
 
@@ -131,22 +137,24 @@ def new_instance(pname, iname, overwrite=False):
     "creates a new instance of a project, returning a map of {data-name: (path-to-data, data)}"
     iid = mk_iid(pname, iname)
     not overwrite and ensure(not instance_exists(iid), "instance exists: %s" % instance_path(iid))
-    struct = {
+    results = {
         'idata': None,
         'tform-template': None,
     }
     idata = new_instance_data(iid)
-
     idata_path = write_file(iid, 'instance-data.json', json.dumps(idata))
-    struct['idata'] = (idata_path, idata)
+    results['idata'] = (idata_path, idata) # necessary?
 
     # write a terraform template, if possible
     tform_data = terraform.template(idata)
     if tform_data:
         tform_file_path = write_file(iid, iid + ".tf.json", json.dumps(tform_data, indent=4))
-        struct['tform-template'] = (tform_file_path, tform_data)
+        results['tform-template'] = (tform_file_path, tform_data)
+        utils.local_cmd("terraform init", cwd=instance_path(iid))
 
-    return struct
+    # anything else ...
+
+    return results
 
 def update_instance(iid):
     pname, iname = utils.parse_iid(iid)

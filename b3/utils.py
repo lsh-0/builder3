@@ -103,3 +103,19 @@ def mkdirs(path):
 
 def parse_iid(iid):
     return iid.split('--')
+
+#
+#
+#
+
+from fabric.api import settings, local, lcd
+
+def local_cmd(command, cwd=None, capture=False):
+    cwd = cwd or conf.PROJECT_DIR
+    with lcd(cwd):
+        ret = local(command, capture)
+        return {
+            'rc': ret.return_code,
+            'stdout': str(ret), # empty if capture=False
+            'stderr': ret.stderr, # empty if capture=False
+        }
