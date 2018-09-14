@@ -1,5 +1,6 @@
 from . import conf
-from .remote_utils import ssh_conn, run_script
+from .utils import ensure, parse_iid
+from .remote_utils import ssh_conn, ssh_conn_password, run_script
 
 
 def bootstrap_actual(iid, idata, resource):
@@ -8,9 +9,21 @@ def bootstrap_actual(iid, idata, resource):
     * upload the bootstrap script
     * run the bootstrap script
     * log in with the standard 'deploy-user' ('luke') afterwards"""
-    if iid == 'work--juniper':
-        with ssh_conn('10.1.1.88', conf.BOOTSTRAP_USER, '/home/luke/.ssh/id_rsa'):
-            run_script('bootstrap.sh', conf.DEPLOY_USER)
+
+    conns = {
+        'work--juniper': {
+            'ip': '10.1.1.88'
+        },
+        'home--rama': {
+            'ip': '10.1.1.198'
+        }
+    }
+
+    ensure(iid in conns, "cannot bootstrap %r, unknown IP")
+
+    with ssh_conn_password(conns[iid]['ip'], conf.BOOTSTRAP_USER, conf.BOOTSTRAP_PASS):
+        pname, iname = parse_iid(iid)
+        run_script('bootstrap.sh', pname, iname, conf.DEPLOY_USER)
 
 def bootstrap(iid, idata, resource):
     dispatch = {

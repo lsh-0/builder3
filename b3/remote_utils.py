@@ -26,6 +26,17 @@ def ssh_conn(host_or_ip, user, pem_path, **kwargs):
     with settings(**params):
         yield
 
+@contextmanager
+def ssh_conn_password(host_or_ip, user, passwd, **kwargs):
+    params = {
+        'user': user,
+        'password': passwd,
+        'host_string': host_or_ip
+    }
+    params.update(kwargs)
+    with settings(**params):
+        yield
+
 def remote_cmd(cmd):
     # requires a stack_conn
     return run(cmd)

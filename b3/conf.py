@@ -7,6 +7,7 @@ ORG_DIR = join(PROJECT_DIR, "project")
 DEFAULT_PROJECT_FILE = 'default'
 
 BOOTSTRAP_USER = 'root' # actually, ubuntu, depending ...
+BOOTSTRAP_PASS = 'root'
 DEPLOY_USER = 'luke'
 
 SCRIPTS_PATH = join(PROJECT_DIR, 'scripts')
