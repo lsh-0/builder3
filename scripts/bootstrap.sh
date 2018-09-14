@@ -3,9 +3,24 @@
 # We don't want to connect as root if we can avoid it
 # run as ROOT
 
-set -eu # everything must pass, no unbound variables
+set -eux # everything must pass, no unbound variables
 
-deploy_user_name=$1 # name of user to be created with permissions to execute ansible states
+pname=$1 # ll 'myprojectname'
+iname=$2 # ll 'prod' or 'end2end' or 'vagrant'
+deploy_user_name=$3 # name of user to be created with permissions to execute ansible states
+
+iid="$pname--$iname"
+
+vagrant=false
+if [ -d /vagrant ]; then vagrant=true; fi
+
+masterless=true
+
+# who knows what state arch is in or how old it is
+# don't proceed until we're running latest
+
+echo "updating system"
+pacman -Syu --noconfirm
 
 # if user doesn't exist, create, grant root perms
 id --user "$deploy_user_name" > /dev/null || {
@@ -14,20 +29,37 @@ id --user "$deploy_user_name" > /dev/null || {
         --create-home \
         --shell /bin/bash \
         "$deploy_user_name"
+}
 
-    # for gui login
-    # password login via ssh is disabled
+test -f /root/deploy-user-password-set.flag || {
+    echo "setting deploy user password"
+    # for gui login, password login via ssh is disabled
     password="password" # obviously it will be changed
     echo "$deploy_user_name:$password" | chpasswd
+    touch /root/deploy-user-password-set.flag
+}
 
+test -f "/etc/sudoers.d/$deploy_user_name" || {
+    echo "granting sudo"
     sudoers_entry="Defaults:$deploy_user_name !requiretty\n$deploy_user_name ALL=(ALL) NOPASSWD: ALL"
     printf "$sudoers_entry" > "/etc/sudoers.d/$deploy_user_name"
 }
 
-test -f /root/bootstrap-pull.flag || {
-    echo "updating packages"
-    pacman -Sy
-    touch /root/bootstrap-pull.flag
+test -d "/home/$deploy_user_name/.ssh" || {
+    echo "configuring ssh"
+    if $vagrant; then
+        # if vagrant, we can't re-use the insecure-by-default keypair belonging to the vagrant user
+        # create a new set for the deploy user and ensure we have a copy to login with in the future
+        sudo --user "$deploy_user_name" sh -c "
+            set -e
+            ssh-keygen -t rsa -f /home/$deploy_user_name/.ssh/id_rsa -N ''
+            cd /home/$deploy_user_name/.ssh
+            cat id_rsa.pub > authorized_keys
+            chmod 600 authorized_keys"
+        mkdir -p "/vagrant/project/instances/$iid/"
+        cp -R "/home/$deploy_user_name/.ssh" "/vagrant/project/instances/$iid/"
+    fi
+    # if ec2, the deploy user shares the keypair generated for the bootstrap user
 }
 
 test -f /root/bootstrap-nm.flag || {
@@ -45,25 +77,58 @@ test -f /root/bootstrap-nm.flag || {
     touch /root/bootstrap-nm.flag
 }
 
-test -f /root/bootstrap-python.flag || {
-    echo "installing python"
-    pacman -S python --noconfirm
-    touch /root/bootstrap-python.flag
+test -f /root/bootstrap-salt.flag || {
+    echo "installing Salt"
+    pacman -S salt --noconfirm
+    touch /root/bootstrap-salt.flag
 }
 
-test ! -f /root/.ssh/authorized_keys || {
-    # WARN: big assumption here
-    # it's assumed the root user is being accessed via a pubkey and not a password
-    # this is intended as a once-off. if the deploy user's authorized keys do
-    # get mangled, it's assumed configuration will fix it or it wasn't important
-    echo "moving root's authorized_keys to $deploy_user_name's authorized_keys"
-    mkdir -p "/home/$deploy_user_name/.ssh/"
-    cp /root/.ssh/authorized_keys "/home/$deploy_user_name/.ssh/authorized_keys"
-    chmod 700 "/home/$deploy_user_name/.ssh"
-    chmod 600 "/home/$deploy_user_name/.ssh/authorized_keys"
-    chown "$deploy_user_name":"$deploy_user_name" -R "/home/$deploy_user_name/.ssh"
-}
+if $masterless; then
+    test -f /root/bootstrap-salt-config.flag || {
+        echo "configuring Salt (masterless)"
+        systemctl disable salt-minion || echo "salt-minion disabled"
+        systemctl stop salt-minion || echo "salt-minion stopped"
+        rm -rf /etc/salt/master
+        mkdir -p /salt
+        echo "$iid" > /etc/salt/minion_id
+        echo "file_client: local # masterless
+file_roots:
+  base:
+    - /salt
+pillar_roots:
+  base:
+    - /salt/pillar
+    " > /etc/salt/minion
+    }
+fi
+
+# TODO: this section needs more thought
+if ! $vagrant; then
+    # if vagrant, the local 'common' formula will be mounted at /salt
+    # if run locally, we need symlinks to that formula
+    formula_dir="/home/$deploy_user_name/dev/scripts/salt-vagrant-arch/salt"
+    if [ ! -d "$formula_dir" ]; then
+        mkdir -p "/home/$deploy_user_name/dev/scripts/"
+        (
+            cd /home/$deploy_user_name/dev/scripts
+            rm -f tmp.tar.gz
+            curl https://bitbucket.org/lskibinski/salt-vagrant-arch/get/master.tar.gz --output tmp.tar.gz
+            tar xvzf tmp.tar.gz
+            mv lskibinski-* salt-vagrant-arch
+        )
+    fi
     
+    if [ -d "$formula_dir" ]; then
+        {
+            cd /salt
+            rm -f top.sls common pillar # symlinks
+            # create new
+            ln -sf "$formula_dir/top.sls"
+            ln -sf "$formula_dir/common"
+            ln -sf "$formula_dir/pillar"
+        }
+    fi
+fi
 
 printf "\n   ◕ ‿‿ ◕   all done\n "
 
