@@ -45,3 +45,7 @@ simple-ec2:
 work:
     - 
         type: actual
+
+home:
+    -
+        type: actual
