@@ -83,7 +83,7 @@ def defaults(oname=None, resource=None):
     return defaults
 
 @task
-def list():
+def instances():
     "list known instances"
     return project.instance_list()
 
@@ -128,6 +128,6 @@ def ssh(iid, target=0xDEADBEEF):
 def bootstrap(iid, target=0xDEADBEEF):
     "bootstrap project instance"
     idata = project.instance_data(iid)
-    targets = lfilter(bootstrappable, idata['pdata-list'])
-    target = utils.pick('project resources', targets, target)
+    targets = lfilter(bootstrappable, idata['pdata'])
+    target = utils.pick('project resources', targets, target, auto_pick=True)
     b3_bootstrap.bootstrap(iid, idata, target)
