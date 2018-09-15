@@ -122,8 +122,9 @@ def local_cmd(command, cwd=None, capture=False):
             'stderr': ret.stderr, # empty if capture=False
         }
 
-def run_script(script_filename, cwd, params=None):
+def run_script(script_filename, cwd=None, params=None):
     "executes a script LOCALLY"
+    cwd = cwd or conf.PROJECT_DIR
     script = os.path.abspath(join("scripts", script_filename))
     def escape_string_parameter(parameter):
         return "'%s'" % parameter
