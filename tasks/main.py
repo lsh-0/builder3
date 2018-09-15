@@ -1,6 +1,6 @@
-from fabric.api import task as fabtask, local
-from b3 import project, keypair, bootstrap as b3_bootstrap, conf
-from b3.utils import ensure, cpprint, BldrAssertionError, lfilter
+from fabric.api import task as fabtask
+from b3 import project, keypair, bootstrap as b3_bootstrap, conf, terraform
+from b3.utils import ensure, cpprint, BldrAssertionError, lfilter, local_cmd
 from functools import wraps
 from . import utils
 
@@ -121,7 +121,7 @@ def ssh(iid, target=0xDEADBEEF):
     public_ip = target['public_ip']
     username = target['username']
     _, private_key_path = keypair.keypair_path(iid)
-    local('ssh %s@%s -i %s' % (username, public_ip, private_key_path))
+    local_cmd('ssh %s@%s -i %s' % (username, public_ip, private_key_path))
 
 @task
 @requires_instance
@@ -131,3 +131,10 @@ def bootstrap(iid, target=0xDEADBEEF):
     targets = lfilter(bootstrappable, idata['pdata'])
     target = utils.pick('project resources', targets, target, auto_pick=True)
     b3_bootstrap.bootstrap(iid, idata, target)
+
+@task
+@requires_instance
+def plan(iid):
+    idata = project.instance_data(iid)
+    cpprint(terraform.template(idata))
+    local_cmd('terraform plan', project.instance_path(iid))
