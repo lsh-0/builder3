@@ -42,6 +42,7 @@ defaults:
     vagrant:
         box: "archlinux/archlinux"
 
+# demo, temporary, remove when things are stable
 simple-ec2:
     -   
         type: ec2
@@ -50,6 +51,14 @@ simple-ec2:
     -
         type: project-config
         project-formula-url: git@bitbucket.org:lskibinski/salt-vagrant-arch
+    -
+        type: vagrant
+
+# needs an ec2+s3 bucket
+wowprj:
+    -
+        type: project-config
+        project-formula-url: git@bitbucket.org:lskibinski/wowprj
     -
         type: vagrant
 
