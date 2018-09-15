@@ -103,12 +103,12 @@ def ec2_instance(resource_data, ctx, node):
         "ami": AMI_MAP[image_id][region],
         "instance_type": resource_data['size'],
         "key_name": keypair_name,
-        "tags": [
-            {"Name": resource_name},
-            {"Project": ctx['project-name']}, # "pname"
-            {"Instance Name": ctx['instance-name']}, # "iname"
-            {"Node": node}, "1"
-        ],
+        "tags": {
+            "Name": resource_name,
+            "Project": ctx['project-name'], # "pname"
+            "Instance Name": ctx['instance-name'], # "iname"
+            "Node": node, # "1"
+        },
         "security_groups": ["${aws_security_group.%s.name}" % security_group_name],
         "provisioner": {"remote-exec": say_hello_world(ctx)},
     }
