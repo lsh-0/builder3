@@ -1,6 +1,6 @@
 from fabric.api import task as fabtask
 from b3 import project, keypair, bootstrap as b3_bootstrap, conf, terraform
-from b3.utils import ensure, cpprint, BldrAssertionError, lfilter, local_cmd, parse_iid
+from b3.utils import ensure, cpprint, BldrAssertionError, lfilter, local_cmd, run_script, parse_iid
 from functools import wraps
 from . import utils
 
@@ -55,8 +55,7 @@ def requires_instance(fn):
 def requires_project(fn):
     @wraps(fn)
     def _wrapper(pname=None, *args, **kwargs):
-        _, known_projects = project.all_project_data()
-        known_projects = known_projects.keys()
+        known_projects = project.project_list()
         if not pname:
             pname = utils.pick('project', known_projects)
         ensure(pname in known_projects, "not a known project")
@@ -171,3 +170,10 @@ def vagrant(iid, cmd='up'):
     cmd = ['%s="%s"' % keyval for keyval in envvars.items()] + ["vagrant", cmd]
     cmdstr = " ".join(cmd)
     local_cmd(cmdstr)
+
+
+@task
+@requires_project
+def new_formula(pname):
+    "creates a new project formula"
+    return run_script('new-project.sh', params=(pname,))

@@ -6,4 +6,5 @@ project/instances/
 .coverage
 htmlcov/
 inventory
-.vagrant
+.vagrant/
+cloned-projects/
