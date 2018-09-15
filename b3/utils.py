@@ -6,6 +6,9 @@ from pygments import lexers
 from pygments import formatters
 from functools import reduce
 
+from fabric.api import local, lcd
+from . import conf
+
 class BldrAssertionError(AssertionError):
     pass
 
@@ -107,8 +110,6 @@ def parse_iid(iid):
 #
 #
 #
-
-from fabric.api import settings, local, lcd
 
 def local_cmd(command, cwd=None, capture=False):
     cwd = cwd or conf.PROJECT_DIR
