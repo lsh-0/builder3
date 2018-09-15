@@ -1,3 +1,4 @@
+import os
 from . import keypair, utils, conf
 from collections import OrderedDict
 
@@ -10,8 +11,8 @@ def vm_context(iid, pdata):
     in the context if you have multiple ec2 instances, or multiple vm types, like ec2, droplet, etc"""
     pub_path, pem_path = keypair.create_keypair(iid) # idempotent
 
-    # makes absolute pem path relative to INSTANCE_DIR
-    local_pem_path = pem_path[len(conf.INSTANCE_DIR) + 1:]
+    # makes absolute pem path relative to INSTANCE_DIR/$instance
+    local_pem_path = os.path.basename(pem_path)
 
     return {
         'keypair': {
