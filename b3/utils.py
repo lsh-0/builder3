@@ -1,5 +1,6 @@
 from datetime import datetime
 import os, sys, itertools
+from os.path import join
 import json, yaml, copy
 from pygments import highlight
 from pygments import lexers
@@ -120,3 +121,12 @@ def local_cmd(command, cwd=None, capture=False):
             'stdout': str(ret), # empty if capture=False
             'stderr': ret.stderr, # empty if capture=False
         }
+
+def run_script(script_filename, cwd, params=None):
+    "executes a script LOCALLY"
+    script = os.path.abspath(join("scripts", script_filename))
+    def escape_string_parameter(parameter):
+        return "'%s'" % parameter
+    cmd = ["/bin/bash", script] + lmap(escape_string_parameter, params) if params else []
+    cmd = " ".join(cmd)
+    return local_cmd(cmd, cwd)

@@ -36,11 +36,22 @@ defaults:
 
     actual: {}
 
+    project-config:
+        project-formula-url: null # repository for project formula
+
+    vagrant:
+        box: "archlinux/archlinux"
+
 simple-ec2:
     -   
         type: ec2
         image:
             id: ubuntu-16.04
+    -
+        type: project-config
+        project-formula-url: git@bitbucket.org:lskibinski/salt-vagrant-arch
+    -
+        type: vagrant
 
 work:
     - 

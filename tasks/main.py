@@ -1,6 +1,6 @@
 from fabric.api import task as fabtask
 from b3 import project, keypair, bootstrap as b3_bootstrap, conf, terraform
-from b3.utils import ensure, cpprint, BldrAssertionError, lfilter, local_cmd
+from b3.utils import ensure, cpprint, BldrAssertionError, lfilter, local_cmd, parse_iid
 from functools import wraps
 from . import utils
 
@@ -63,6 +63,17 @@ def requires_project(fn):
         return fn(pname, *args, **kwargs)
     return _wrapper
 
+def requires_resources(*resource_list):
+    def _wrap1(fn):
+        @wraps(fn)
+        def _wrap2(iid, *args, **kwargs):
+            missing_resources = project.has_all_resources(iid, resource_list)
+            ensure(len(missing_resources) == 0, \
+                   "task %r requires missing resources: %s (do you need to run 'update'?)" % (fn.__name__, ", ".join(missing_resources)))
+            return fn(iid, *args, **kwargs)
+        return _wrap2
+    return _wrap1
+
 #
 #
 #
@@ -89,9 +100,11 @@ def instances():
 
 @task
 @requires_instance
-def context(iid):
+def instance_data(iid):
     "list project instance state"
-    return project.new_instance_data(iid)
+    cpprint(project.new_instance_data(iid))
+    print()
+    return project.instance_data_path(iid) 
 
 @task
 def new(pname=None, iname=None):
@@ -138,3 +151,23 @@ def plan(iid):
     idata = project.instance_data(iid)
     cpprint(terraform.template(idata))
     local_cmd('terraform plan', project.instance_path(iid))
+
+@task
+@requires_instance
+@requires_resources('vagrant')
+def vagrant(iid, cmd='up'):
+    "calls custom Vagrant file with a bunch of ENVVARs set."
+    pname, iname = parse_iid(iid)
+    idata = project.instance_data(iid)
+    envvars = {
+        'BLDR_PNAME': pname,
+        'BLDR_INAME': iname,
+        'BLDR_IID': iid,
+        'BLDR_VAGRANT_BOX': idata['pdata-resource-map']['vagrant']['box'],
+        #'BLDR_PROJECT_REPO': idata['pdata-resource-map']['project-config']['project-formula-url'], # urgh, bit long ..
+        'BLDR_PROJECT_REPO': idata['context']['project-config']['formula-name'], # still kinda long
+        'BLDR_DEPLOY_USER': conf.DEPLOY_USER,
+    }
+    cmd = ['%s="%s"' % keyval for keyval in envvars.items()] + ["vagrant", cmd]
+    cmdstr = " ".join(cmd)
+    local_cmd(cmdstr)
