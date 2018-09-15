@@ -1,5 +1,5 @@
 import os
-from . import keypair, utils, conf
+from . import keypair, utils
 from collections import OrderedDict
 
 def ec2_context(iid, pdata):
