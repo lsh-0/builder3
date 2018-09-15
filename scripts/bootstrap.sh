@@ -103,6 +103,8 @@ pillar_roots:
 fi
 
 # TODO: this section needs more thought
+# the below is essentially "if 'actual', checkout my home formula and hook it up"
+# it needs to be, "if not 'vagrant', checkout *project formula* and hook it up"
 if ! $vagrant; then
     # if vagrant, the local 'common' formula will be mounted at /salt
     # if run locally, we need symlinks to that formula
@@ -111,10 +113,8 @@ if ! $vagrant; then
         mkdir -p "/home/$deploy_user_name/dev/scripts/"
         (
             cd /home/$deploy_user_name/dev/scripts
-            rm -f tmp.tar.gz
-            curl https://bitbucket.org/lskibinski/salt-vagrant-arch/get/master.tar.gz --output tmp.tar.gz
-            tar xvzf tmp.tar.gz
-            mv lskibinski-* salt-vagrant-arch
+            pacman -S git --noconfirm
+            git clone git@bitbucket.org:lskibinski/salt-vagrant-arch
         )
     fi
     
