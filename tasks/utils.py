@@ -28,7 +28,7 @@ def pick(choice_type, choices, default=0xDEADBEEF, auto_pick=False, auto_default
     """
     @default allows a specific choice to be set as the default
     @auto_pick will automatically use the first choice in the list of choices if the list has a length of 1
-    @auto_default is used if a default is not specified and uses the first value in the list of choices
+    @auto_default is used if a default is not specified, using the first value in the list of choices
     """
     ensure(choices, "no %ss to choose from" % choice_type)
     has_default = default != 0xDEADBEEF
