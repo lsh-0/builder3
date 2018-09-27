@@ -89,6 +89,9 @@ def say_hello_world(ctx):
         "connection": ssh_connection(ctx)
     }
 
+def mkoutput(key, resource_path, alias=None):
+    return {alias or key: {"value": "${%s.%s}" % (resource_path, key)}}
+
 def ec2_instance(resource_data, ctx, node):
     "returns a single `aws_instance` resource and a single `aws_security_group` resource"
 
@@ -112,14 +115,18 @@ def ec2_instance(resource_data, ctx, node):
         "security_groups": ["${aws_security_group.%s.name}" % security_group_name],
         "provisioner": {"remote-exec": say_hello_world(ctx)},
     }
+    resource_path = "aws_instance." + resource_name
     return {
         "resource": [
             {"aws_key_pair": {keypair_name: keypair}},
             {'aws_security_group': {security_group_name: security_group}},
             {'aws_instance': {resource_name: aws_instance}},
         ],
+        # https://www.terraform.io/docs/providers/aws/r/instance.html#attributes-reference
+        # these will have to change, I think terraform flattens outputs
         "output": [
-            {"public-ip": {"value": "${aws_instance.%s.public_ip}" % resource_name}}
+            mkoutput("id", resource_path),
+            mkoutput("public_ip", resource_path, "public-ip")
         ]
     }
 
