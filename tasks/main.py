@@ -164,22 +164,24 @@ def terraform(iid, cmd):
     
 @task
 @requires_instance
-@requires_resources('vagrant')
+@requires_resources('vagrant', 'project-config') # TODO: this checks the pdata, but the ctx values are used
 def vagrant(iid, cmd='up'):
     "calls custom Vagrant file with a bunch of ENVVARs set."
     pname, iname = parse_iid(iid)
     idata = project.instance_data(iid)
-    ensure('vagrant' in idata['context'], "no mention of 'vagrant' in project context. do you need to `./bldr update` ?")
 
-    ctx = idata['context']['vagrant']
+    ctx = idata['context']
     envvars = {
         'BLDR_PNAME': pname,
         'BLDR_INAME': iname,
         'BLDR_IID': iid,
-        'BLDR_VAGRANT_BOX': ctx['box'],
-        'BLDR_PROJECT_REPO': ctx['project-formula-url'],
+        'BLDR_VAGRANT_BOX': ctx['vagrant']['box'],
+        'BLDR_PROJECT_REPO': ctx['project-config']['formula-name'],
         'BLDR_DEPLOY_USER': conf.DEPLOY_USER,
     }
+
+    # TODO: clone/update formula repo
+
     cmd = ['%s="%s"' % keyval for keyval in envvars.items()] + ["vagrant", cmd]
     cmdstr = " ".join(cmd)
     local_cmd(cmdstr)
