@@ -1,5 +1,5 @@
 from fabric.api import task as fabtask
-from b3 import project, keypair, bootstrap as b3_bootstrap, conf, terraform
+from b3 import project, keypair, bootstrap as b3_bootstrap, conf, terraform as b3_terraform
 from b3.utils import ensure, cpprint, BldrAssertionError, lfilter, local_cmd, run_script, parse_iid
 from functools import wraps
 from . import utils
@@ -27,12 +27,6 @@ def pick_project():
 def pick_iname():
     print('instance name')
     return utils.prompt()
-
-def sshable(resource):
-    return resource['type'] in [
-        'ec2',
-        'vagrant'
-    ]
 
 def bootstrappable(resource):
     return resource['type'] in [
@@ -127,9 +121,16 @@ def update(iid):
 @requires_instance
 def ssh(iid, target=0xDEADBEEF):
     "ssh into project instance"
+
+    def sshable(resource):
+        return resource['type'] in [
+            'ec2',
+            'vagrant'
+        ]
+
     idata = project.instance_data(iid)
-    targets = lfilter(sshable, idata['pdata-list'])
-    target = utils.pick('project resources', targets, target)
+    targets = lfilter(sshable, idata['pdata'])
+    target = utils.pick('project resources', targets, target, auto_pick=True)
     public_ip = target['public_ip']
     username = target['username']
     _, private_key_path = keypair.keypair_path(iid)
@@ -148,9 +149,19 @@ def bootstrap(iid, target=0xDEADBEEF):
 @requires_instance
 def plan(iid):
     idata = project.instance_data(iid)
-    cpprint(terraform.template(idata))
+    cpprint(b3_terraform.template(idata))
     local_cmd('terraform plan', project.instance_path(iid))
 
+@task
+@requires_instance
+def terraform(iid, cmd):
+    "does a 'terraform apply' and then updates the instance data"
+    dispatch = {
+        'apply': project.apply_update
+    }
+    ensure(cmd in dispatch, "unknown command %r" % cmd) 
+    return dispatch[cmd](iid)
+    
 @task
 @requires_instance
 @requires_resources('vagrant')
@@ -158,13 +169,15 @@ def vagrant(iid, cmd='up'):
     "calls custom Vagrant file with a bunch of ENVVARs set."
     pname, iname = parse_iid(iid)
     idata = project.instance_data(iid)
+    ensure('vagrant' in idata['context'], "no mention of 'vagrant' in project context. do you need to `./bldr update` ?")
+
+    ctx = idata['context']['vagrant']
     envvars = {
         'BLDR_PNAME': pname,
         'BLDR_INAME': iname,
         'BLDR_IID': iid,
-        'BLDR_VAGRANT_BOX': idata['pdata-resource-map']['vagrant']['box'],
-        #'BLDR_PROJECT_REPO': idata['pdata-resource-map']['project-config']['project-formula-url'], # urgh, bit long ..
-        'BLDR_PROJECT_REPO': idata['context']['project-config']['formula-name'], # still kinda long
+        'BLDR_VAGRANT_BOX': ctx['box'],
+        'BLDR_PROJECT_REPO': ctx['project-formula-url'],
         'BLDR_DEPLOY_USER': conf.DEPLOY_USER,
     }
     cmd = ['%s="%s"' % keyval for keyval in envvars.items()] + ["vagrant", cmd]
