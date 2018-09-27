@@ -2,7 +2,7 @@
 
 set -e  # everything must pass
 set -u  # no unbound variables
-set -x # show interpolation
+#set -x # show interpolation
 
 appname=$1
 
