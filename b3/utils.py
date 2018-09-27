@@ -6,9 +6,11 @@ from pygments import highlight
 from pygments import lexers
 from pygments import formatters
 from functools import reduce
-
 from fabric.api import local, lcd
 from . import conf
+import logging
+
+LOG = logging.getLogger(__name__)
 
 class BldrAssertionError(AssertionError):
     pass
@@ -49,6 +51,9 @@ def dictfilterv(fn, d):
 def dictmap(fn, d):
     "maps given fn to fn(key, val)"
     return [fn(key, val) for key, val in d.items()]
+
+def subdict(d, lst):
+    return {key: val for key, val in d.items() if key in lst}
 
 def json_unsafe_dumps(d, *args, **kwargs):
     def fn(x):
@@ -115,6 +120,7 @@ def parse_iid(iid):
 def local_cmd(command, cwd=None, capture=False):
     cwd = cwd or conf.PROJECT_DIR
     with lcd(cwd):
+        LOG.info("running %r in %s" % (command, cwd))
         ret = local(command, capture)
         return {
             'rc': ret.return_code,
