@@ -1,6 +1,6 @@
 from os.path import join
-from . import conf, utils, context, terraform
-from .utils import ensure, threadm, lfilter
+from . import conf, utils, terraform, keypair
+from .utils import ensure, threadm, lfilter, first, subdict
 import os, json
 from functools import partial, wraps, reduce
 from collections import OrderedDict
@@ -31,8 +31,33 @@ def visit(val, fn):
     return newval
 
 #
-#
-#
+# utils
+# 
+
+def _get_resource(pdata, resource_name):
+    return first(filter(lambda r: r['type'] == resource_name, pdata))
+
+def get_resource(iid_or_idata_or_pdata, resource_name):
+    "returns the first resource in the pdata derived from the first argument whose 'type' attribute matches given 'resource_name'"
+    dispatch = {
+        # iid
+        str: lambda: instance_data(iid_or_idata_or_pdata)['pdata'],
+        # idata
+        dict: lambda: iid_or_idata_or_pdata['pdata'],
+        # pdata
+        list: lambda: iid_or_idata_or_pdata
+    }
+    pdata = dispatch[type(iid_or_idata_or_pdata)]()
+    return _get_resource(pdata, resource_name)
+
+def resource_list(iid_or_idata_or_pdata, resource_name_list):
+    pass
+
+def has_all_resources(iid, required_resource_list):
+    "returns a subset of `required_resource_list` that are missing from project's instance data"
+    resource_list = instance_data(iid)['pdata-resource-list']
+    # all given resources are present in project's instance data
+    return set(required_resource_list).difference(set(resource_list))
 
 def is_type(struct):
     return isinstance(struct, dict) and 'type' in struct
@@ -46,6 +71,10 @@ def expand_type(defaults, struct):
     resource = utils.deepcopy(rdefaults)
     resource.update(struct)
     return resource
+
+#
+# 
+#
 
 # cacheable
 def all_project_data(oname=None):
@@ -76,8 +105,98 @@ def mk_iid(pname, iname):
     ensure(pname and iname, "both a project name `pname` and instance name `iname` are required to create an instance-id `iid`")
     return "%s--%s" % (pname, iname)
 
+
+"""
+
+context
+
+the 'context' is a subset of all available project and instance data.
+
+the subset of data contains everything needed to create new, update and delete existing project instances.
+
+it brings disparate data together, like project data and terraform state and public keys, etc
+
+it contains convenience values - values derived from one or more other values.
+
+the context is a snapshot of what the project data looked like at either creation time or after the last update. it doesn't otherwise change
+
+the instance context may be bundled with the parsed project data and called `idata`.
+
+"""
+
+def terraform_init_ed(iid):
+    return os.path.exists(join(instance_path(iid), ".terraform"))
+
+def terraform_outputs(iid):
+    "returns whatever outputs exists from terraform. if the instance hasn't been launched or has been destroyed, there won't be anything"
+    if not terraform_init_ed(iid):
+        return {}
+    results = utils.local_cmd("terraform output -json", cwd=instance_path(iid), capture=True)
+    return json.loads(results['stdout'])
+
+def ec2_context(iid, pdata, resource):
+    return {}
+
+def vm_context(iid, pdata, _):
+    """idempotent, will not create multiple keypairs.
+    it will create multiple dictionaries with the same data at different paths 
+    in the context if you have multiple ec2 instances, or multiple vm types, like ec2, droplet, etc"""
+    pub_path, pem_path = keypair.create_keypair(iid) # idempotent
+
+    # makes absolute pem path relative to INSTANCE_DIR/$instance
+    local_pem_path = os.path.basename(pem_path)
+
+    return {
+        'keypair': {
+            'pub': open(pub_path, 'r').read(),
+            'pem': local_pem_path
+        }
+    }
+
+def project_context(iid, pdata, resource):
+    repo = resource['project-formula-url']
+    # just the formula name, sans any '.git' ext
+    repo_name = os.path.splitext(os.path.basename(repo))[0]
+    return {
+        'formula': repo,
+        'formula-name': repo_name
+    }
+
+def vagrant_context(iid, pdata, resource):
+    "everything we need to run a vagrant command in here"
+    retval = utils.deepcopy(resource)
+    retval.update(subdict(get_resource(pdata, 'project-config'), ['project-formula-url']))
+    return retval
+
+def build(iid, pdata):
+    "generates a dictionary used to create and update infrastructure"
+    per_type_context = OrderedDict([
+        ('project-config', project_context),
+        ('ec2', [vm_context, ec2_context]),
+        ('vagrant', vagrant_context),
+    ])
+    ctx = {}
+    for resource in pdata:
+        rtype = resource['type']
+        build_context_fn_lst = per_type_context[rtype] if rtype in per_type_context else []
+        if not isinstance(build_context_fn_lst, list):
+            build_context_fn_lst = [build_context_fn_lst]
+        for build_context_fn in build_context_fn_lst:
+            ctx[rtype] = ctx.get(rtype, {})
+            ctx[rtype].update(build_context_fn(iid, pdata, resource))
+
+    # and some exceptions to the rule for convenience:
+    pname, iname = utils.parse_iid(iid)[:2]
+    ctx.update({
+        'iid': iid,
+        'project-name': pname,
+        'instance-name': iname,
+    })
+    return ctx
+
+
 #
-#
+# instances
 #
 
 def instance_path(iid, fname=None, create_dirs=False):
@@ -120,7 +239,7 @@ def new_instance_data(iid, oname=None):
     pdata = project_data(pname, oname)
 
     # config + project def => instance_data => terraform/cloudformation/whatever template
-    ctx = context.build(iid, pdata)
+    ctx = build(iid, pdata)
 
     return {
         # list of resources
@@ -134,6 +253,9 @@ def new_instance_data(iid, oname=None):
         'pdata-resource-map': OrderedDict((r['type'], r) for r in pdata),
 
         'context': ctx,
+
+        # this is a bit meh.
+        'state': terraform_outputs(iid)
     }
 
 def instance_data_path(iid, oname=None):
@@ -145,7 +267,7 @@ def instance_data(iid, oname=None):
     return json.load(open(instance_data_path(iid), 'r'))
 
 #
-#
+# init/update/config of instances
 #
 
 def terraform_configurator(iid, idata):
@@ -195,21 +317,12 @@ def update_instance(iid):
     return new_instance(pname, iname, overwrite=True)
 
 #
-#
+# launch instances
 #
 
-def resource(iid_or_idata, required_resource):
-    iid = idata = None
-    if isinstance(iid_or_idata, dict):
-        idata = iid_or_idata
-        iid = idata['context']['iid']
-    else:
-        iid = iid_or_idata
-        idata = instance_data(iid)
-    return lfilter(lambda r: r['type'] == required_resource, idata['pdata'])
-
-def has_all_resources(iid, required_resource_list):
-    "returns a subset of `required_resource_list` that are missing from project's instance data"
-    resource_list = instance_data(iid)['pdata-resource-list']
-    # all given resources are present in project's instance data
-    return set(required_resource_list).difference(set(resource_list))
+def apply_update(iid):
+    idata = instance_data(iid)
+    if not terraform.terraformable(idata['pdata']):
+        return {}
+    #return utils.local_cmd("terraform apply -auto-approve", cwd=instance_path(iid))
+    return utils.local_cmd("terraform apply", cwd=instance_path(iid))
