@@ -16,6 +16,12 @@ CUSTOM_SSH_KEY = File.expand_path("#{PROJECT_PATH}/#{IID}_rsa") # pem
 CUSTOM_SSH = File.exists?(CUSTOM_SSH_KEY)
 CUSTOM_SSH_USERNAME = DEPLOY_USER
 
+if BOX.include? "ubuntu"
+    OS="ubuntu"
+else
+    OS="arch"
+end
+
 def runcmd(cmd)
     output = nil
     IO.popen(cmd) do |io|
@@ -39,13 +45,13 @@ Vagrant.configure("2") do |config|
     config.ssh.insert_key = false
 
     # "./project/instances/pname--iname/cloned-projects/pname-formula/salt"
-    config.vm.synced_folder "#{PROJECT_PATH}/cloned-projects/#{REPO_NAME}/salt/", "/salt"
+    config.vm.synced_folder "./cloned-projects/#{REPO_NAME}/salt/", "/salt"
 
     print [PNAME, INAME, DEPLOY_USER]
 
     config.vm.define IID do |project|
         project.vm.provision("shell", path: "scripts/bootstrap.sh", \
-            keep_color: true, privileged: true, args: [PNAME, INAME, DEPLOY_USER])
+            keep_color: true, privileged: true, args: [PNAME, INAME, OS, DEPLOY_USER])
     end
 
     if CUSTOM_SSH and ["ssh", "ssh-config"].include? VAGRANT_COMMAND

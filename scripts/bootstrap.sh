@@ -7,7 +7,8 @@ set -eux # everything must pass, no unbound variables
 
 pname=$1 # ll 'myprojectname'
 iname=$2 # ll 'prod' or 'end2end' or 'vagrant'
-deploy_user_name=$3 # name of user to be created with permissions to execute ansible states
+os=$3 # name of distro, used for switching between specific commands
+deploy_user_name=$4 # name of user to be created with permissions to execute ansible states
 
 iid="$pname--$iname"
 
@@ -20,7 +21,11 @@ masterless=true
 # don't proceed until we're running latest
 
 echo "updating system"
-pacman -Syu --noconfirm
+if [ "$os" == "arch" ]; then
+    pacman -Syu --noconfirm
+else
+    apt-get update -y
+fi
 
 # if user doesn't exist, create, grant root perms
 id --user "$deploy_user_name" > /dev/null || {
@@ -62,24 +67,35 @@ test -d "/home/$deploy_user_name/.ssh" || {
     # if ec2, the deploy user shares the keypair generated for the bootstrap user
 }
 
-test -f /root/bootstrap-nm.flag || {
-    echo "installing NetworkManager"
-    pacman -S networkmanager dhcpcd --noconfirm
-    systemctl disable netctl
-    systemctl stop netctl
-    
-    systemctl enable NetworkManager
-    systemctl start NetworkManager
-    
-    sleep 3 # urgh
-    ping -c 3 duckduckgo.net
+if [ "$os" == "arch" ]; then
+    test -f /root/bootstrap-nm.flag || {
+        echo "installing NetworkManager"
+        pacman -S networkmanager dhcpcd --noconfirm
+        systemctl disable netctl
+        systemctl stop netctl
+        
+        systemctl enable NetworkManager
+        systemctl start NetworkManager
+        
+        sleep 3 # urgh
+        ping -c 3 duckduckgo.net
 
-    touch /root/bootstrap-nm.flag
-}
+        touch /root/bootstrap-nm.flag
+    }
+fi
 
 test -f /root/bootstrap-salt.flag || {
-    echo "installing Salt"
-    pacman -S salt --noconfirm
+    if [ "$os" == "arch" ]; then
+        echo "installing Salt"
+        pacman -S salt --noconfirm
+    else
+        wget -O salt_bootstrap.sh https://bootstrap.saltstack.com --no-verbose
+        # -P  Allow pip based installations.
+        # -F  Allow copied files to overwrite existing(config, init.d, etc)
+        # -c  Temporary configuration directory
+        # https://github.com/saltstack/salt-bootstrap/blob/develop/bootstrap-salt.sh
+        sh salt_bootstrap.sh -P -F -c /tmp stable 2018.3
+    fi
     touch /root/bootstrap-salt.flag
 }
 
@@ -99,8 +115,12 @@ pillar_roots:
   base:
     - /salt/pillar
     " > /etc/salt/minion
+
+        ln -sf /salt/example.top /salt/top.sls
     }
 fi
+
+
 
 # TODO: this section needs more thought
 # the below is essentially "if 'actual', checkout my home formula and hook it up"
