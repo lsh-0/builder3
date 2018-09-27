@@ -41,6 +41,7 @@ defaults:
 
     vagrant:
         box: "archlinux/archlinux"
+        # TODO; CPU, RAM
 
 # demo, temporary, remove when things are stable
 simple-ec2:
