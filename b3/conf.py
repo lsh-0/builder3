@@ -1,6 +1,10 @@
 #from . import utils
 import os
 from os.path import join
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 SRC_DIR = os.path.realpath(os.path.dirname(__file__))
 PROJECT_DIR = os.path.dirname(SRC_DIR)
 ORG_DIR = join(PROJECT_DIR, "project")
