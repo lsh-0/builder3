@@ -1,6 +1,6 @@
 from . import conf
 from .utils import ensure, parse_iid
-from .remote_utils import ssh_conn, ssh_conn_password, run_script
+from .remote_utils import ssh_conn_password, run_script
 
 
 def bootstrap_actual(iid, idata, resource):
