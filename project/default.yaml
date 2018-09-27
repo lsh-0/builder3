@@ -69,3 +69,11 @@ work:
 home:
     -
         type: actual
+
+mail:
+    -
+        type: vagrant
+        box: bento/ubuntu-18.04
+    -
+        type: project-config
+        project-formula-url: git@bitbucket.org:lskibinski/mail-formula
