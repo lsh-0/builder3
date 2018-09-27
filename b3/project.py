@@ -163,10 +163,7 @@ def project_context(iid, pdata, resource):
     }
 
 def vagrant_context(iid, pdata, resource):
-    "everything we need to run a vagrant command in here"
-    retval = utils.deepcopy(resource)
-    retval.update(subdict(get_resource(pdata, 'project-config'), ['project-formula-url']))
-    return retval
+    return utils.deepcopy(resource)
 
 def build(iid, pdata):
     "generates a dictionary used to create and update infrastructure"
