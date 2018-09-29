@@ -116,7 +116,10 @@ pillar_roots:
     - /salt/pillar
     " > /etc/salt/minion
 
-        ln -sf /salt/example.top /salt/top.sls
+        {
+            cd /salt
+            ln -sf example.top top.sls
+        }
     }
 fi
 
