@@ -47,7 +47,7 @@ Vagrant.configure("2") do |config|
     # "./project/instances/pname--iname/cloned-projects/pname-formula/salt"
     config.vm.synced_folder "./cloned-projects/#{REPO_NAME}/salt/", "/salt"
 
-    print [PNAME, INAME, DEPLOY_USER]
+    #print [PNAME, INAME, DEPLOY_USER]
 
     config.vm.define IID do |project|
         project.vm.provision("shell", path: "scripts/bootstrap.sh", \
