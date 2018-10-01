@@ -16,7 +16,7 @@ if [ -d "$appname-formula" ]; then
 fi
 
 # create/update example project
-example_project="builder3-example-project"
+example_project="formula-template"
 if [ ! -e "$example_project" ]; then
     git clone https://bitbucket.org/lskibinski/builder3-example-project "$example_project"
 else
@@ -55,13 +55,15 @@ rm .README.template
         - $appname" > ./example.top
 
     # replace the example.pillar file with a generated+empty one
-    echo "$appname:
+    echo "# example salt *pillar* top file
+$appname:
     no: data" > "./pillar/$appname.sls"
 
     # generate an example top pillar file
-    echo "base:
+    echo "# example salt top file
+base:
     '*':
-        - $appname" > ./pillar/top.sls
+        - $appname" > ./pillar/example.top
 )
 
 # render the readme template
