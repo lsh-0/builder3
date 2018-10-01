@@ -1,8 +1,8 @@
 from fabric.api import task as fabtask
 from b3 import project, keypair, bootstrap as b3_bootstrap, conf, terraform as b3_terraform
-from b3.utils import ensure, cpprint, BldrAssertionError, lfilter, local_cmd, run_script, parse_iid
+from b3.utils import ensure, cpprint, BldrAssertionError, lfilter, local_cmd, run_script, repo_name
 from functools import wraps
-from . import utils
+from . import utils, vagrant as vagrant_logic
 
 def task(fn):
     @fabtask
@@ -163,29 +163,30 @@ def terraform(iid, cmd):
     return dispatch[cmd](iid)
     
 @task
-@requires_instance
-@requires_resources('vagrant', 'project-config') # TODO: this checks the pdata, but the ctx values are used
-def vagrant(iid, cmd='up'):
+@requires_project #@requires_resources('vagrant', 'project-config') # TODO: this checks the pdata, but the ctx values are used
+def vagrant(pname, cmd='up'):
     "calls custom Vagrant file with a bunch of ENVVARs set."
-    pname, iname = parse_iid(iid)
-    idata = project.instance_data(iid)
-
-    ctx = idata['context']
+    cmd = str(cmd).strip().lower()
+    iname = 'vagrant'
+    iid = project.mk_iid(pname, iname) # "projectname--vagrant"
+    
+    cfg = project.project_data_map(pname)
     envvars = {
         'BLDR_PNAME': pname,
         'BLDR_INAME': iname,
         'BLDR_IID': iid,
-        'BLDR_VAGRANT_BOX': ctx['vagrant']['box'],
-        'BLDR_PROJECT_REPO': ctx['project-config']['formula-name'],
+        'BLDR_VAGRANT_BOX': cfg['vagrant']['box'],
+        'BLDR_PROJECT_REPO': repo_name(cfg['project-config']['project-formula-url']),
         'BLDR_DEPLOY_USER': conf.DEPLOY_USER,
     }
 
-    # TODO: clone/update formula repo
+    vagrant_logic.write_etc_salt_minion(pname)
+    if cmd in ['provision', 'up', 'reload']:
+        vagrant_logic.clone_repos(pname)
 
     cmd = ['%s="%s"' % keyval for keyval in envvars.items()] + ["vagrant", cmd]
     cmdstr = " ".join(cmd)
     local_cmd(cmdstr)
-
 
 @task
 @requires_project

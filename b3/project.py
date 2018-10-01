@@ -1,6 +1,6 @@
 from os.path import join
 from . import conf, utils, terraform, keypair
-from .utils import ensure, threadm, lfilter, first, subdict
+from .utils import ensure, threadm, lmap, lfilter, first
 import os, json
 from functools import partial, wraps, reduce
 from collections import OrderedDict
@@ -38,7 +38,7 @@ def _get_resource(pdata, resource_name):
     return first(filter(lambda r: r['type'] == resource_name, pdata))
 
 def get_resource(iid_or_idata_or_pdata, resource_name):
-    "returns the first resource in the pdata derived from the first argument whose 'type' attribute matches given 'resource_name'"
+    "returns the *first* resource in the pdata derived from the first argument whose 'type' attribute matches given 'resource_name'"
     dispatch = {
         # iid
         str: lambda: instance_data(iid_or_idata_or_pdata)['pdata'],
@@ -50,14 +50,25 @@ def get_resource(iid_or_idata_or_pdata, resource_name):
     pdata = dispatch[type(iid_or_idata_or_pdata)]()
     return _get_resource(pdata, resource_name)
 
-def resource_list(iid_or_idata_or_pdata, resource_name_list):
+def get_resource_list(iid_or_idata_or_pdata, resource_name_list):
+    "like `get_resource` but returns all resources of given type"
     pass
 
+# TODO: this is checking context (static) vs project data (dynamic)
 def has_all_resources(iid, required_resource_list):
     "returns a subset of `required_resource_list` that are missing from project's instance data"
     resource_list = instance_data(iid)['pdata-resource-list']
     # all given resources are present in project's instance data
     return set(required_resource_list).difference(set(resource_list))
+
+def has_resource(iid, required_resource):
+    "convenience. see has_all_resources"
+    return has_all_resources(iid, [required_resource])
+
+def ensure_has_resource(iid, *required_resource_list):
+    missing_resources = has_all_resources(iid, required_resource_list)
+    ensure(not missing_resources, "%r is missing resources: %s" % (iid, ", ".join(missing_resources)))
+    return True
 
 def is_type(struct):
     return isinstance(struct, dict) and 'type' in struct
@@ -99,6 +110,12 @@ def project_data(pname, oname=None):
     defaults, odata = all_project_data(oname)
     ensure(pname in odata, "project %r not found. available projects: %s" % (pname, ", ".join(odata.keys())))
     return odata[pname]
+
+def project_data_map(pname, oname=None):
+    """WARNING: a project may have multiple resources of a give type. 
+    this is for *convenience only* when we know for certain there is only ever a single instance of a given type"""
+    pdata = project_data(pname, oname)
+    return OrderedDict((r['type'], r) for r in pdata)
 
 def mk_iid(pname, iname):
     pname, iname = threadm((pname, iname), str, 'lower', 'strip')
@@ -153,13 +170,20 @@ def vm_context(iid, pdata, _):
         }
     }
 
+def _formula_breakdown(url):
+    return {
+        'formula': url,
+        'formula-name': utils.repo_name(url)
+    }
+
 def project_context(iid, pdata, resource):
     repo = resource['project-formula-url']
     # just the formula name, sans any '.git' ext
     repo_name = os.path.splitext(os.path.basename(repo))[0]
     return {
         'formula': repo,
-        'formula-name': repo_name
+        'formula-name': repo_name,
+        'formula-dependencies': lmap(_formula_breakdown, resource.get('formula-dependencies'))
     }
 
 def vagrant_context(iid, pdata, resource):
@@ -247,7 +271,7 @@ def new_instance_data(iid, oname=None):
 
         # convenience, map of resource types -> resource
         # warn! lossy for projects with multiple resources of the same type!
-        'pdata-resource-map': OrderedDict((r['type'], r) for r in pdata),
+        'pdata-resource-map': project_data_map(pname, oname),
 
         'context': ctx,
 
@@ -258,6 +282,7 @@ def new_instance_data(iid, oname=None):
 def instance_data_path(iid, oname=None):
     return instance_path(iid, 'instance-data.json')
 
+# TODO: cache me
 def instance_data(iid, oname=None):
     """returns a map of data about the project instance, including the
     context used to build the terraform project and the project data."""

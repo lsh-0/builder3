@@ -17,6 +17,12 @@ DEPLOY_USER = 'luke'
 SCRIPTS_PATH = join(PROJECT_DIR, 'scripts')
 
 #
+# vagrant
+#
+
+CLONED_PROJECT_DIR = join(PROJECT_DIR, 'cloned-projects')
+
+#
 # terraform
 #
 

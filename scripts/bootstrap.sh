@@ -7,8 +7,9 @@ set -eux # everything must pass, no unbound variables
 
 pname=$1 # ll 'myprojectname'
 iname=$2 # ll 'prod' or 'end2end' or 'vagrant'
-os=$3 # name of distro, used for switching between specific commands
-deploy_user_name=$4 # name of user to be created with permissions to execute ansible states
+repo_name=$3 # ll 'prod-formula', should be present in ./cloned-projects
+os=$4 # name of distro, used for switching between specific commands
+deploy_user_name=$5 # name of user to be created with permissions to execute ansible states
 
 iid="$pname--$iname"
 
@@ -107,7 +108,16 @@ if $masterless; then
         rm -rf /etc/salt/master
         mkdir -p /salt
         echo "$iid" > /etc/salt/minion_id
-        echo "file_client: local # masterless
+
+        # write salt config
+        if [ -f "/salt/$repo_name/salt/etc-salt-minion" ]; then
+            # etc-salt-minion file exists
+            rm /etc/salt/minion
+            ln -s "/salt/$repo_name/salt/etc-salt-minion" /etc/salt/minion
+        else
+            # TODO: might scrap this and die if etc-salt-minion is absent
+            # etc-salt-minion doesn't exist, use a generic one
+            echo "file_client: local # masterless
 file_roots:
   base:
     - /salt
@@ -115,9 +125,10 @@ pillar_roots:
   base:
     - /salt/pillar
     " > /etc/salt/minion
+        fi
 
         {
-            cd /salt
+            cd "/salt/$repo_name/salt/"
             ln -sf example.top top.sls
         }
     }

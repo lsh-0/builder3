@@ -65,13 +65,18 @@ def json_unsafe_dumps(d, *args, **kwargs):
 def cpprint(d):
     "colourised pretty printer. not safe for proper data serialisation"
     data = json_unsafe_dumps(d, indent=4)
-    lexer = lexers.Python3Lexer()
-    formatter = formatters.TerminalFormatter()
+    # why the calls to `getattr`? pylint complains about no-members
+    lexer = getattr(lexers, 'Python3Lexer')()
+    formatter = getattr(formatters, 'TerminalFormatter')()
     sys.stdout.write((highlight(data, lexer, formatter)))
 
 def load_yaml(path):
     with open(path, 'r') as fh:
         return yaml.safe_load(fh)
+
+def dump_yaml(data, path):
+    with open(path, 'w') as fh:
+        return yaml.safe_dump(data, fh, default_flow_style=False)
 
 def _deepmerge(a, b):
     ta, tb = type(a), type(b)
@@ -113,6 +118,10 @@ def mkdirs(path):
 def parse_iid(iid):
     return iid.split('--')
 
+def repo_name(url):
+    "git@bitbucket.org:user/reponame.git => reponame"
+    return os.path.splitext(os.path.basename(url))[0]
+
 #
 #
 #
@@ -120,7 +129,6 @@ def parse_iid(iid):
 def local_cmd(command, cwd=None, capture=False):
     cwd = cwd or conf.PROJECT_DIR
     with lcd(cwd):
-        LOG.info("running %r in %s" % (command, cwd))
         ret = local(command, capture)
         return {
             'rc': ret.return_code,
@@ -137,3 +145,14 @@ def run_script(script_filename, cwd=None, params=None):
     cmd = ["/bin/bash", script] + lmap(escape_string_parameter, params) if params else []
     cmd = " ".join(cmd)
     return local_cmd(cmd, cwd)
+
+#
+#
+#
+
+def clone_repo(repo_url):
+    """`repo_url` is the repository url location, something git would understand."""
+    try:
+        return run_script("clone-repo.sh", params=[repo_name(repo_url), repo_url])
+    except BaseException:
+        print('failed cloning',repo_url)

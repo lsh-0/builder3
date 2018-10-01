@@ -44,11 +44,11 @@ Vagrant.configure("2") do |config|
     config.vm.box_check_update = false
     config.ssh.insert_key = false
 
-    config.vm.synced_folder "./cloned-projects/#{REPO_NAME}/salt/", "/salt"
+    config.vm.synced_folder "./cloned-projects/", "/salt"
 
     config.vm.define IID do |project|
         project.vm.provision("shell", path: "scripts/bootstrap.sh", \
-            keep_color: true, privileged: true, args: [PNAME, INAME, OS, DEPLOY_USER])
+            keep_color: true, privileged: true, args: [PNAME, INAME, REPO_NAME, OS, DEPLOY_USER])
     end
 
     if CUSTOM_SSH and ["ssh", "ssh-config"].include? VAGRANT_COMMAND

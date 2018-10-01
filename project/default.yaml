@@ -38,10 +38,16 @@ defaults:
 
     project-config:
         project-formula-url: null # repository for project formula
+        private-formula-url: git@bitbucket.org:lskibinski/base-private-formula # repository for private formula
+        formula-dependencies: []
 
     vagrant:
         box: "archlinux/archlinux"
         # TODO; CPU, RAM
+
+base: []
+
+base-private: []
 
 # demo, temporary, remove when things are stable
 simple-ec2:
@@ -78,3 +84,6 @@ mail:
     -
         type: project-config
         project-formula-url: git@bitbucket.org:lskibinski/mail-formula
+        formula-dependencies:
+            #- git@bitbucket.org:lskibinski/base-formula
+            - git@github.com:elifesciences/builder-base-formula
